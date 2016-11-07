@@ -1,0 +1,35 @@
+group 'co.ninjavan.toolkit'
+version '1.0.0'
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        jcenter()
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+        events 'started', 'passed'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'co.ninjavan.toolkit.clipboard_generator.ClipboardGeneratorMain'
+    }
+}
