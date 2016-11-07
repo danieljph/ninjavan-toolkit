@@ -98,6 +98,7 @@ public class NinjavanToolkitMain implements ActionListener
 
     public static void main(String[] args) throws AWTException
     {
+        System.setProperty("apple.awt.UIElement", "true");
         new NinjavanToolkitMain().showSystemTray();
     }
 }
