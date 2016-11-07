@@ -1,4 +1,4 @@
-package co.ninjavan.toolkit.clipboard_generator;
+package com.karyasarma.ninjavan_toolkit;
 
 /**
  *

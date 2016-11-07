@@ -1,4 +1,4 @@
-package co.ninjavan.toolkit.clipboard_generator;
+package com.karyasarma.ninjavan_toolkit;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,13 +14,13 @@ import java.util.Date;
  *
  * @author Daniel Joi Partogi Hutapea
  */
-public class ClipboardGeneratorMain implements ActionListener
+public class NinjavanToolkitMain implements ActionListener
 {
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
     private MenuItem quitMi;
 
-    public ClipboardGeneratorMain()
+    public NinjavanToolkitMain()
     {
     }
 
@@ -56,7 +56,7 @@ public class ClipboardGeneratorMain implements ActionListener
         quitMi.addActionListener(this);
         popupMenu.add(quitMi);
 
-        Image image = Toolkit.getDefaultToolkit().getImage(ClipboardGeneratorMain.class.getResource("/images/ninjavan.ico"));
+        Image image = Toolkit.getDefaultToolkit().getImage(NinjavanToolkitMain.class.getResource("/images/ninjavan.ico"));
 
         TrayIcon trayIcon = new TrayIcon(image, "Ninja Van Toolkit");
         trayIcon.setPopupMenu(popupMenu);
@@ -98,6 +98,6 @@ public class ClipboardGeneratorMain implements ActionListener
 
     public static void main(String[] args) throws AWTException
     {
-        new ClipboardGeneratorMain().showSystemTray();
+        new NinjavanToolkitMain().showSystemTray();
     }
 }

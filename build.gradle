@@ -1,8 +1,8 @@
-group 'co.ninjavan.toolkit'
-version '1.0.0'
+group 'com.karyasarma'
+version '1.0.1'
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 
 buildscript {
     repositories {
@@ -30,6 +30,6 @@ test {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'co.ninjavan.toolkit.clipboard_generator.ClipboardGeneratorMain'
+        attributes 'Main-Class': 'com.karyasarma.ninjavan_toolkit.NinjavanToolkitMain'
     }
 }
