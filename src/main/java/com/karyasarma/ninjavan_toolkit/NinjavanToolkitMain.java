@@ -16,8 +16,10 @@ import java.util.Date;
  */
 public class NinjavanToolkitMain implements ActionListener
 {
-    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
+    private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
+    private static final SimpleDateFormat TRACKING_ID_SDF = new SimpleDateFormat("MMddyy");
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
+    private MenuItem getDateMi;
     private MenuItem quitMi;
 
     public NinjavanToolkitMain()
@@ -33,6 +35,10 @@ public class NinjavanToolkitMain implements ActionListener
         }
 
         PopupMenu popupMenu = new PopupMenu();
+
+        getDateMi = new MenuItem("Get Date");
+        getDateMi.addActionListener(this);
+        popupMenu.add(getDateMi);
 
         listOfSimpleMenu.add(new SimpleMenu("Pick Up"));
         listOfSimpleMenu.add(new SimpleMenu("Order"));
@@ -76,7 +82,7 @@ public class NinjavanToolkitMain implements ActionListener
 
             if(actionCommand.equals(simpleMenuName))
             {
-                String createdAt = "Created at "+SIMPLE_DATE_FORMAT.format(new Date())+'.';
+                String createdAt = "Created at "+CURRENT_DATE_SDF.format(new Date())+'.';
                 copyToClipboard(String.format("This \"%s\" is created for testing purpose only. Ignore this \"%s\". %s", simpleMenuName, simpleMenuName, createdAt));
                 return;
             }
@@ -84,7 +90,12 @@ public class NinjavanToolkitMain implements ActionListener
 
         Object source = evt.getSource();
 
-        if(source==quitMi)
+        if(source==getDateMi)
+        {
+            String trackingIdPrefix = TRACKING_ID_SDF.format(new Date());
+            copyToClipboard(trackingIdPrefix);
+        }
+        else if(source==quitMi)
         {
             System.exit(0);
         }
