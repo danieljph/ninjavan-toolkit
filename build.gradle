@@ -1,8 +1,8 @@
 group 'com.karyasarma'
-version '1.0.1'
+version '1.0.2'
 apply plugin: 'java'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 buildscript {
     repositories {

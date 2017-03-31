@@ -18,8 +18,12 @@ public class NinjavanToolkitMain implements ActionListener
 {
     private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
     private static final SimpleDateFormat TRACKING_ID_SDF = new SimpleDateFormat("MMddyy");
+    private static final SimpleDateFormat DATE_AND_TIME_SDF = new SimpleDateFormat("ddMMyyyyhhmmss");
+    private static final SimpleDateFormat ROUTE_GROUP_NAME_SDF = new SimpleDateFormat("'DJPH-RG' EEE, MMMM dd, yyyy hh:mm:ss");
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
     private MenuItem getDateMi;
+    private MenuItem getDateAndTimeMi;
+    private MenuItem getRouteGroupNameMi;
     private MenuItem quitMi;
 
     public NinjavanToolkitMain()
@@ -39,6 +43,14 @@ public class NinjavanToolkitMain implements ActionListener
         getDateMi = new MenuItem("Get Date");
         getDateMi.addActionListener(this);
         popupMenu.add(getDateMi);
+
+        getDateAndTimeMi = new MenuItem("Get Date & Time");
+        getDateAndTimeMi.addActionListener(this);
+        popupMenu.add(getDateAndTimeMi);
+
+        getRouteGroupNameMi = new MenuItem("Get RG Name");
+        getRouteGroupNameMi.addActionListener(this);
+        popupMenu.add(getRouteGroupNameMi);
 
         listOfSimpleMenu.add(new SimpleMenu("Pick Up"));
         listOfSimpleMenu.add(new SimpleMenu("Order"));
@@ -93,6 +105,16 @@ public class NinjavanToolkitMain implements ActionListener
         if(source==getDateMi)
         {
             String trackingIdPrefix = TRACKING_ID_SDF.format(new Date());
+            copyToClipboard(trackingIdPrefix);
+        }
+        else if(source==getDateAndTimeMi)
+        {
+            String trackingIdPrefix = DATE_AND_TIME_SDF.format(new Date());
+            copyToClipboard(trackingIdPrefix);
+        }
+        else if(source==getRouteGroupNameMi)
+        {
+            String trackingIdPrefix = ROUTE_GROUP_NAME_SDF.format(new Date());
             copyToClipboard(trackingIdPrefix);
         }
         else if(source==quitMi)
