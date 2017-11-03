@@ -1,5 +1,10 @@
 package com.karyasarma.ninjavan_toolkit;
 
+import com.karyasarma.ninjavan_toolkit.client.OperatorClient;
+import com.karyasarma.ninjavan_toolkit.database.dao.OrderDao;
+import com.karyasarma.ninjavan_toolkit.database.dao.RouteDao;
+import com.karyasarma.ninjavan_toolkit.database.model.Order;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -7,8 +12,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 
 /**
  *
@@ -131,7 +135,44 @@ public class NinjavanToolkitMain implements ActionListener
 
     public static void main(String[] args) throws AWTException
     {
-        System.setProperty("apple.awt.UIElement", "true");
-        new NinjavanToolkitMain().showSystemTray();
+        //System.setProperty("apple.awt.UIElement", "true");
+        //new NinjavanToolkitMain().showSystemTray();
+
+        /**
+         * Shipper:
+         *
+         * qa-oc-postpaid-v3-webhook = 3339 (Felix) -> NVSGOCKW3000009785
+         * QA Account = 3275 -> QANV7508900196C
+         * Driver App Shipper #1 = 15261 -> DAS01508903243
+         * Driver App Shipper Auto RSVN = 15747
+         */
+
+        /**
+         * Driver:
+         *
+         * automation1 = 1650
+         * automation2 = 1652
+         * opv1no1 = 1608
+         */
+
+        int[] shipperIds = new int[]{3339, 3275, 15261, 15747};
+        int[] driverIds = new int[]{1650, 1652, 1608};
+
+        OperatorClient operatorClient = new OperatorClient();
+        operatorClient.login("AUTOMATION", "95h]BWjRYg27og4gt5n_4T8D5L1v2u");
+
+        for(int shipperId : shipperIds)
+        {
+            java.util.List<Order> listOfOrder = new OrderDao().getNotCompletedOrder("core_qa_sg", shipperId);
+            System.out.println("Number of Orders: "+listOfOrder.size());
+            operatorClient.forceSuccessFast(listOfOrder);
+        }
+
+        for(int driverId : driverIds)
+        {
+            java.util.List<Integer> listOfRouteIds = new RouteDao().getUnarchivedRouteIds("core_qa_sg", driverId);
+            System.out.println("Number of Routes: "+listOfRouteIds.size());
+            operatorClient.archiveRoute(listOfRouteIds);
+        }
     }
 }
