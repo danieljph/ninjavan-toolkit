@@ -1,6 +1,7 @@
 package com.karyasarma.ninjavan_toolkit;
 
 import com.karyasarma.ninjavan_toolkit.client.OperatorClient;
+import com.karyasarma.ninjavan_toolkit.database.dao.DpOrderDao;
 import com.karyasarma.ninjavan_toolkit.database.dao.OrderDao;
 import com.karyasarma.ninjavan_toolkit.database.dao.RouteDao;
 import com.karyasarma.ninjavan_toolkit.database.model.Order;
@@ -145,6 +146,8 @@ public class NinjavanToolkitMain implements ActionListener
          * QA Account = 3275 -> QANV7508900196C
          * Driver App Shipper #1 = 15261 -> DAS01508903243
          * Driver App Shipper Auto RSVN = 15747
+         *
+         * Shipper Load Test: 17093, 17095, 17097, 17099, 17101, 17103, 17105, 17107, 17109, 17111, 17113, 17115, 17117, 17119, 17121, 17123, 17125, 17127, 17129, 17131
          */
 
         /**
@@ -153,26 +156,25 @@ public class NinjavanToolkitMain implements ActionListener
          * automation1 = 1650
          * automation2 = 1652
          * opv1no1 = 1608
+         *
+         * Driver Load Test: 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489
          */
 
-        int[] shipperIds = new int[]{3339, 3275, 15261, 15747};
-        int[] driverIds = new int[]{1650, 1652, 1608};
+        int[] shipperIds = new int[]{3339, 3275, 15261, 15747, 3308, 3309, 17731, 17093, 17095, 17097, 17099, 17101, 17103, 17105, 17107, 17109, 17111, 17113, 17115, 17117, 17119, 17121, 17123, 17125, 17127, 17129, 17131};
+        int[] driverIds = new int[]{1650, 1652, 1608, 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489};
 
         OperatorClient operatorClient = new OperatorClient();
         operatorClient.login("AUTOMATION", "95h]BWjRYg27og4gt5n_4T8D5L1v2u");
 
-        for(int shipperId : shipperIds)
-        {
-            java.util.List<Order> listOfOrder = new OrderDao().getNotCompletedOrder("core_qa_sg", shipperId);
-            System.out.println("Number of Orders: "+listOfOrder.size());
-            operatorClient.forceSuccessFast(listOfOrder);
-        }
+        java.util.List<Order> listOfOrder = new OrderDao().getNotCompletedOrder("core_qa_sg", shipperIds);
+        System.out.println("Number of Orders: "+listOfOrder.size());
+        operatorClient.forceSuccessFast(listOfOrder);
 
-        for(int driverId : driverIds)
-        {
-            java.util.List<Integer> listOfRouteIds = new RouteDao().getUnarchivedRouteIds("core_qa_sg", driverId);
-            System.out.println("Number of Routes: "+listOfRouteIds.size());
-            operatorClient.archiveRoute(listOfRouteIds);
-        }
+        java.util.List<Integer> listOfRouteIds = new RouteDao().getUnarchivedRouteIds("core_qa_sg", driverIds);
+        System.out.println("Number of Routes: "+listOfRouteIds.size());
+        operatorClient.archiveRoute(listOfRouteIds);
+
+        DpOrderDao dpOrderDao = new DpOrderDao();
+        dpOrderDao.cleanDpOrders("dpms_qa_sg");
     }
 }

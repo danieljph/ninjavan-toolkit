@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -19,15 +20,15 @@ public class RouteDao
     {
     }
 
-    public List<Integer> getUnarchivedRouteIds(String databaseName, int driverId)
+    public List<Integer> getUnarchivedRouteIds(String databaseName, int[] driverIds)
     {
         List<Integer> listOfRouteIds = new ArrayList<>();
-        String sql = String.format("SELECT id FROM %s.route_logs WHERE driver_id = ? AND archived = 0 AND deleted_at IS NULL", databaseName);
+        String driverIdsInClause = Arrays.toString(driverIds).replace("[","(").replace("]", ")");
+        String sql = String.format("SELECT id FROM %s.route_logs WHERE driver_id IN %s AND archived = 0 AND deleted_at IS NULL", databaseName, driverIdsInClause);
 
         try(Connection conn = ConnectionManager.getConnectionManager())
         {
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, driverId);
             ResultSet rs = pstmt.executeQuery();
 
             while(rs.next())

@@ -3,11 +3,9 @@ package com.karyasarma.ninjavan_toolkit.database.dao;
 import com.karyasarma.ninjavan_toolkit.database.ConnectionManager;
 import com.karyasarma.ninjavan_toolkit.database.model.Order;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,15 +18,15 @@ public class OrderDao
     {
     }
 
-    public List<Order> getNotCompletedOrder(String databaseName, int shipperId)
+    public List<Order> getNotCompletedOrder(String databaseName, int[] shipperIds)
     {
         List<Order> listOfOrder = new ArrayList<>();
-        String sql = String.format("SELECT id, tracking_id FROM %s.orders WHERE shipper_id = ? AND granular_status NOT IN ('Completed', 'Cancelled', 'Returned to Sender')", databaseName);
+        String shipperIdsInClause = Arrays.toString(shipperIds).replace("[","(").replace("]", ")");
+        String sql = String.format("SELECT id, tracking_id FROM %s.orders WHERE shipper_id IN %s AND granular_status NOT IN ('Completed', 'Cancelled', 'Returned to Sender')", databaseName, shipperIdsInClause);
 
         try(Connection conn = ConnectionManager.getConnectionManager())
         {
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, shipperId);
             ResultSet rs = pstmt.executeQuery();
 
             while(rs.next())
