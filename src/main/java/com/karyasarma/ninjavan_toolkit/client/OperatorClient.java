@@ -1,7 +1,6 @@
 package com.karyasarma.ninjavan_toolkit.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.karyasarma.ninjavan_toolkit.database.model.Order;
 import com.karyasarma.ninjavan_toolkit.util.IntegerCounter;
@@ -19,7 +18,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
@@ -30,7 +28,7 @@ import static io.restassured.RestAssured.given;
  */
 public class OperatorClient
 {
-    private static final String API_BASE_URL = "https://api-qa.ninjavan.co/sg";
+    private static String API_BASE_URL = "https://api-qa.ninjavan.co/";
     private String accessToken;
 
     public OperatorClient()
@@ -38,9 +36,10 @@ public class OperatorClient
         RestAssured.useRelaxedHTTPSValidation();
     }
 
-    public OperatorClient(String accessToken)
+    public OperatorClient(String accessToken, String countryCode)
     {
         this.accessToken = accessToken;
+        API_BASE_URL = API_BASE_URL + countryCode.toLowerCase();
     }
 
     public String login(String clientId, String clientSecret)
@@ -102,17 +101,14 @@ public class OperatorClient
     {
         String apiPath = "/core/orders/forcesuccess";
         int size = listOfOrder.size();
-        //int counter = 0;
         IntegerCounter integerCounter = new IntegerCounter();
 
-        ExecutorService executor = Executors.newFixedThreadPool(100);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
 
         for(Order order : listOfOrder)
         {
             executor.execute(() ->
             {
-                int counter = 0;
-                counter++;
                 integerCounter.inc();
                 int responseCode = -1;
                 long l1 = System.currentTimeMillis();
@@ -121,44 +117,56 @@ public class OperatorClient
                 {
                     URL url = new URL(API_BASE_URL+apiPath);
                     HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+                    connection.setConnectTimeout(3_000);
+                    connection.setReadTimeout(3_000);
                     connection.setRequestMethod("POST");
                     connection.setRequestProperty("Content-Type", "application/json");
                     connection.setRequestProperty("Authorization", "Bearer "+accessToken);
 
                     connection.setDoOutput(true);
+                    connection.setDoInput(true);
                     DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                    wr.writeBytes(String.format("[{\"orderId\":%d, \"withDriver\":true, \"codCollected\":true}]", order.getId()));
+                    wr.writeBytes(String.format("[{\"orderId\":%d, \"withDriver\":true, \"codCollected\":false}]", order.getId()));
                     wr.flush();
                     wr.close();
                     responseCode = connection.getResponseCode();
+
+//                    BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//                    String input;
+//
+//                    while((input=br.readLine())!=null)
+//                    {
+//                        System.out.println(input);
+//                    }
                 }
                 catch(MalformedURLException ex)
                 {
+                    ex.printStackTrace();
                 }
                 catch(IOException ex)
                 {
+                    ex.printStackTrace();
                 }
 
                 long l2 = System.currentTimeMillis();
                 long duration = l2-l1;
                 int remainingOrder = size-integerCounter.getValue();
 
-                synchronized (integerCounter)
+                //synchronized(integerCounter)
                 {
-                    if(integerCounter.getValue()%200==0)
+                    //if(integerCounter.getValue()%20==0)
                     {
-                        System.out.println(String.format("Force successing order with Tracking ID = '%s' in %dms with response code %d. Remaining order(s): %d", order.getTrackingId(), duration, responseCode, remainingOrder));
+                        System.out.println(String.format("Force succeeding order (%d) with Tracking ID = '%s' in %,dms with response code %d. Remaining order(s): %,d", order.getId(), order.getTrackingId(), duration, responseCode, remainingOrder));
                     }
                 }
 
             });
-
         }
 
-        executor.shutdown();
         try
         {
-            executor.awaitTermination(1, TimeUnit.DAYS);
+            executor.shutdown();
+            executor.awaitTermination(1, TimeUnit.HOURS);
         }
         catch(Exception ex)
         {
@@ -183,6 +191,7 @@ public class OperatorClient
             //spec.log().all();
 
             Response response = spec.when().put(API_BASE_URL + apiPath);
+            response.then().log().all();
             int remainingOrder = size-counter;
             System.out.println(String.format("Archive route with ID = '%d' with response code %d. Remaining route(s): %d", routeId, response.getStatusCode(), remainingOrder));
         }

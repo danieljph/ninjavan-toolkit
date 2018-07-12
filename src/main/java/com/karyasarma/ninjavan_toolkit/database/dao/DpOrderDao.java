@@ -22,7 +22,7 @@ public class DpOrderDao
     public List<Order> cleanDpOrders(String databaseName)
     {
         List<Order> listOfOrder = new ArrayList<>();
-        String sql = String.format("UPDATE %s.dp_orders SET deleted_at = NOW() WHERE deleted_at IS NULL AND tracking_id LIKE '%DAS01%'", databaseName);
+        String sql = String.format("UPDATE %s.dp_orders SET deleted_at = NOW() WHERE deleted_at IS NULL AND tracking_id LIKE '%%DAS01%%'", databaseName);
 
         try(Connection conn = ConnectionManager.getConnectionManager())
         {

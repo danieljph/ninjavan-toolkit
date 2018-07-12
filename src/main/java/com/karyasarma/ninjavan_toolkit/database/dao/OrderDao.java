@@ -3,7 +3,10 @@ package com.karyasarma.ninjavan_toolkit.database.dao;
 import com.karyasarma.ninjavan_toolkit.database.ConnectionManager;
 import com.karyasarma.ninjavan_toolkit.database.model.Order;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +25,8 @@ public class OrderDao
     {
         List<Order> listOfOrder = new ArrayList<>();
         String shipperIdsInClause = Arrays.toString(shipperIds).replace("[","(").replace("]", ")");
-        String sql = String.format("SELECT id, tracking_id FROM %s.orders WHERE shipper_id IN %s AND granular_status NOT IN ('Completed', 'Cancelled', 'Returned to Sender')", databaseName, shipperIdsInClause);
+        String sql = String.format("SELECT id, tracking_id, created_at FROM %s.orders WHERE deleted_at IS NULL and status <> 'Completed' and shipper_id IN %s LIMIT 0, 50000", databaseName, shipperIdsInClause);
+        System.out.println("Get Not Completed Order: "+sql);
 
         try(Connection conn = ConnectionManager.getConnectionManager())
         {

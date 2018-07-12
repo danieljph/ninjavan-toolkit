@@ -20,7 +20,7 @@ public class ConnectionManager
 
         try
         {
-            conn = DriverManager.getConnection("jdbc:mysql://35.187.233.25:6333", "ferdinand", "Qz4miH46$M28H08ZN~$10DB2b0g752");
+            conn = DriverManager.getConnection("jdbc:mysql://10.80.0.13:6333", "ferdinand", "Qz4miH46$M28H08ZN~$10DB2b0g752");
         }
         catch(SQLException ex)
         {
