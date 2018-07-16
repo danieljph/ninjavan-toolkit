@@ -1,36 +1,49 @@
 package com.karyasarma.ninjavan_toolkit;
 
-import com.karyasarma.ninjavan_toolkit.client.OperatorClient;
-import com.karyasarma.ninjavan_toolkit.database.dao.DpOrderDao;
-import com.karyasarma.ninjavan_toolkit.database.dao.OrderDao;
-import com.karyasarma.ninjavan_toolkit.database.dao.RouteDao;
-import com.karyasarma.ninjavan_toolkit.database.model.Order;
+import com.karyasarma.ninjavan_toolkit.util.CurlData;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JOptionPane;
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Date;
 
 /**
  *
  * @author Daniel Joi Partogi Hutapea
  */
+@SuppressWarnings("WeakerAccess")
 public class NinjavanToolkitMain implements ActionListener
 {
     private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
     private static final SimpleDateFormat TRACKING_ID_SDF = new SimpleDateFormat("MMddyy");
     private static final SimpleDateFormat DATE_AND_TIME_SDF = new SimpleDateFormat("ddMMyyyyhhmmss");
     private static final SimpleDateFormat ROUTE_GROUP_NAME_SDF = new SimpleDateFormat("'DJPH-RG' EEE, MMMM dd, yyyy hh:mm:ss");
+
+    private static final String START_CURL_PARSER = "Start cURL Parser";
+    private static final String STOP_CURL_PARSER = "Stop cURL Parser";
+
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
+    private MenuItem curlParser;
     private MenuItem getDateMi;
     private MenuItem getDateAndTimeMi;
     private MenuItem getRouteGroupNameMi;
     private MenuItem quitMi;
+
+    private ClipboardReader clipboardReader;
 
     public NinjavanToolkitMain()
     {
@@ -45,6 +58,11 @@ public class NinjavanToolkitMain implements ActionListener
         }
 
         PopupMenu popupMenu = new PopupMenu();
+
+        curlParser = new MenuItem(START_CURL_PARSER);
+        curlParser.addActionListener(this);
+        popupMenu.add(curlParser);
+        popupMenu.addSeparator();
 
         getDateMi = new MenuItem("Get Date");
         getDateMi.addActionListener(this);
@@ -108,7 +126,31 @@ public class NinjavanToolkitMain implements ActionListener
 
         Object source = evt.getSource();
 
-        if(source==getDateMi)
+        if(source==curlParser)
+        {
+            if(clipboardReader!=null && clipboardReader.isAlive())
+            {
+                clipboardReader.stopReader();
+                clipboardReader.interrupt();
+            }
+
+            switch(curlParser.getLabel())
+            {
+                case START_CURL_PARSER:
+                {
+                    curlParser.setLabel(STOP_CURL_PARSER);
+                    clipboardReader = new ClipboardReader();
+                    clipboardReader.start();
+                    break;
+                }
+                case STOP_CURL_PARSER:
+                {
+                    curlParser.setLabel(START_CURL_PARSER);
+                    break;
+                }
+            }
+        }
+        else if(source==getDateMi)
         {
             String trackingIdPrefix = TRACKING_ID_SDF.format(new Date());
             copyToClipboard(trackingIdPrefix);
@@ -131,59 +173,70 @@ public class NinjavanToolkitMain implements ActionListener
 
     private void copyToClipboard(String data)
     {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        Clipboard clipboard = getSystemClipboard();
         clipboard.setContents(new StringSelection(data), null);
     }
 
-    public static void main(String[] args) throws AWTException
+    public Clipboard getSystemClipboard()
     {
-        //System.setProperty("apple.awt.UIElement", "true");
-        //new NinjavanToolkitMain().showSystemTray();
+        return Toolkit.getDefaultToolkit().getSystemClipboard();
+    }
 
-        /**
-         * Shipper:
-         *
-         * qa-oc-postpaid-v3-webhook = 3339 (Felix) -> NVSGOCKW3000009785
-         * QA Account = 3275 -> QANV7508900196C
-         * Shipper OpV2OcV2 = 18546 -> SOCV2516874521C
-         * Driver App Shipper #1 = 15261 -> DAS01508903243
-         * Driver App Shipper Auto RSVN = 15747
-         * Shipper Jeri = 17474
-         * Shipper Binti = 17455, 16431
-         * Shipper Lite Shipper = 3314
-         * Ian Shipper = 3308
-         * Dini Seprilia = 16981
-         *
-         * Shipper Load Test: 17093, 17095, 17097, 17099, 17101, 17103, 17105, 17107, 17109, 17111, 17113, 17115, 17117, 17119, 17121, 17123, 17125, 17127, 17129, 17131
-         */
-
-        /**
-         * Driver:
-         *
-         * automation1 = 1650
-         * automation2 = 1652
-         * opv1no1 = 1608
-         * bintinrc1 = 2389
-         * bintinr2 = 2679
-         * jerisg01 = 2441
-         *
-         * Driver Load Test: 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489
-         */
-
-        while(true)
+    public void start()
+    {
+        try
         {
-
-            int[] shipperIds = new int[]{1651};
-            int[] driverIds = new int[]{1608, 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489};
-
-            OperatorClient operatorClient = new OperatorClient();
-            operatorClient.login("AUTOMATION", "95h]BWjRYg27og4gt5n_4T8D5L1v2u");
-
-            java.util.List<Order> listOfOrder = new OrderDao().getNotCompletedOrder("core_qa_id", shipperIds);
-
-            //System.out.println(listOfOrder.stream().mapToInt(Order::getId).boxed().collect(Collectors.toList()));
-            System.out.println("Number of Orders: " + listOfOrder.size());
-            operatorClient.forceSuccessFast(listOfOrder);
+            showSystemTray();
         }
+        catch(AWTException ex)
+        {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public class ClipboardReader extends Thread
+    {
+        private boolean stop;
+
+        public ClipboardReader()
+        {
+            setDaemon(true);
+        }
+
+        @Override
+        public void run()
+        {
+            while(!stop)
+            {
+                try
+                {
+
+                    String restAssuredLog = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+
+                    if(restAssuredLog.contains("==================== REQUEST ====================") && restAssuredLog.contains("================================================="))
+                    {
+                        CurlData curlData = CurlData.parse(restAssuredLog);
+                        getSystemClipboard().setContents(new StringSelection(curlData.toCurl()), null);
+                    }
+
+                    Thread.sleep(2000);
+                }
+                catch(UnsupportedFlavorException | IOException | InterruptedException ex)
+                {
+                    System.out.println("Error: "+ex.getMessage());
+                }
+            }
+        }
+
+        public void stopReader()
+        {
+            this.stop = true;
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        System.setProperty("apple.awt.UIElement", "true");
+        new NinjavanToolkitMain().start();
     }
 }
