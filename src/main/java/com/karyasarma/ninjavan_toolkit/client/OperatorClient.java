@@ -31,9 +31,10 @@ public class OperatorClient
     private static String API_BASE_URL = "https://api-qa.ninjavan.co/";
     private String accessToken;
 
-    public OperatorClient()
+    public OperatorClient(String countryCode)
     {
         RestAssured.useRelaxedHTTPSValidation();
+        API_BASE_URL = API_BASE_URL + countryCode.toLowerCase();
     }
 
     public OperatorClient(String accessToken, String countryCode)
@@ -192,6 +193,27 @@ public class OperatorClient
 
             Response response = spec.when().put(API_BASE_URL + apiPath);
             response.then().log().all();
+            int remainingOrder = size-counter;
+            System.out.println(String.format("Archive route with ID = '%d' with response code %d. Remaining route(s): %d", routeId, response.getStatusCode(), remainingOrder));
+        }
+    }
+
+    public void newArchiveRoute(List<Integer> listOfRouteIds)
+    {
+        int size = listOfRouteIds.size();
+        int counter = 0;
+        String apiPath = "/core/routes/archive";
+
+        for(Integer routeId : listOfRouteIds)
+        {
+            counter++;
+            RequestSpecification spec = given()
+                    .header("Authorization", "Bearer " + accessToken)
+                    .contentType(ContentType.JSON)
+                    .body(String.format("[{\"routeIds\":[%d]}]", routeId));
+
+            Response response = spec.when().put(API_BASE_URL + apiPath);
+            //response.then().log().all();
             int remainingOrder = size-counter;
             System.out.println(String.format("Archive route with ID = '%d' with response code %d. Remaining route(s): %d", routeId, response.getStatusCode(), remainingOrder));
         }
