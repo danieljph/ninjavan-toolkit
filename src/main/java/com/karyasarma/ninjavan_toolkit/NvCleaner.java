@@ -1,6 +1,7 @@
 package com.karyasarma.ninjavan_toolkit;
 
 import com.karyasarma.ninjavan_toolkit.client.OperatorClient;
+import com.karyasarma.ninjavan_toolkit.database.dao.DpOrderDao;
 import com.karyasarma.ninjavan_toolkit.database.dao.OrderDao;
 import com.karyasarma.ninjavan_toolkit.database.dao.RouteDao;
 import com.karyasarma.ninjavan_toolkit.database.model.Order;
@@ -44,11 +45,12 @@ public class NvCleaner
          * Driver Load Test: 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489
          */
 
-        int[] shipperIds = new int[]{18763,18764,4488,15567,4340};
+        int[] shipperIds = new int[]{16592};
         int[] driverIds = new int[]{1608, 1610};
 
-        boolean enableCleanOrders = true;
+        boolean enableCleanOrders = false;
         boolean enableCleanRoutes = false;
+        boolean enableCleanDp = true;
 
         String countryCode = "SG";
         String coreDatabaseName;
@@ -79,6 +81,11 @@ public class NvCleaner
                 //System.out.println("Number of Routes: "+listOfRouteIds.size());
                 operatorClient.newArchiveRoute(listOfRouteIds);
             }
+        }
+
+        if(enableCleanDp)
+        {
+            new DpOrderDao().cleanDpOrders("dpms_qa_sg", "MCJ2O");
         }
     }
 }
