@@ -105,6 +105,16 @@ public class NinjavanToolkitMain implements ActionListener
 
         SystemTray systemTray = SystemTray.getSystemTray();
         systemTray.add(trayIcon);
+
+        BarcodeReader barcodeReader = new BarcodeReader();
+        barcodeReader.addBarcodeListener(new BarcodeReader.BarcodeListener()
+        {
+            @Override
+            public void onBarcodeRead(String barcode)
+            {
+                System.out.println("KODE: "+barcode);
+            }
+        });
     }
 
     @Override
@@ -211,17 +221,12 @@ public class NinjavanToolkitMain implements ActionListener
                 try
                 {
 
-                    String restAssuredLog = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
-
-                    if(restAssuredLog.contains("==================== REQUEST ====================") && restAssuredLog.contains("================================================="))
-                    {
-                        CurlData curlData = CurlData.parse(restAssuredLog);
-                        getSystemClipboard().setContents(new StringSelection(curlData.toCurl()), null);
-                    }
-
-                    Thread.sleep(2000);
+//                    String restAssuredLog = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+//                    System.out.println("Value: "+restAssuredLog);
+//
+//                    Thread.sleep(2000);
                 }
-                catch(UnsupportedFlavorException | IOException | InterruptedException ex)
+                catch(Exception ex)
                 {
                     System.out.println("Error: "+ex.getMessage());
                 }

@@ -45,11 +45,11 @@ public class NvCleaner
          * Driver Load Test: 2451, 2453, 2455, 2457, 2459, 2461, 2463, 2465, 2467, 2469, 2471, 2473, 2475, 2477, 2479, 2481, 2483, 2485, 2487, 2489
          */
 
-        int[] shipperIds = new int[]{16592};
+        int[] shipperIds = new int[]{19757, 20106, 22959, 18671, 18763, 4313, 4654, 4662, 22940, 20732, 15261, 235, 4650, 18546, 4658, 15091, 15095, 3339, 23880, 22943, 18209, 22942, 18210, 18764, 18765, 4340};
         int[] driverIds = new int[]{1608, 1610};
 
-        boolean enableCleanOrders = false;
-        boolean enableCleanRoutes = false;
+        boolean enableCleanOrders = true;
+        boolean enableCleanRoutes = true;
         boolean enableCleanDp = true;
 
         String countryCode = "SG";
