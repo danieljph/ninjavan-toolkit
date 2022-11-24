@@ -1,6 +1,5 @@
 package com.karyasarma.ninjavan_toolkit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karyasarma.ninjavan_toolkit.doku.model.Log;
 
 import javax.swing.*;
@@ -12,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 /**
  *
@@ -65,16 +63,6 @@ public class DokuToolkitMain implements ActionListener
 
         SystemTray systemTray = SystemTray.getSystemTray();
         systemTray.add(trayIcon);
-
-        BarcodeReader barcodeReader = new BarcodeReader();
-        barcodeReader.addBarcodeListener(new BarcodeReader.BarcodeListener()
-        {
-            @Override
-            public void onBarcodeRead(String barcode)
-            {
-                System.out.println("KODE: "+barcode);
-            }
-        });
     }
 
     @Override
@@ -87,7 +75,7 @@ public class DokuToolkitMain implements ActionListener
             try
             {
                 String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
-                System.out.println("Data: "+logsData);
+                System.out.println("Data: \n"+logsData);
                 copyToClipboard(Log.parse(logsData));
             }
             catch(Exception ex)

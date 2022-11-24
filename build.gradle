@@ -1,5 +1,5 @@
 group 'com.karyasarma'
-version '1.0.2'
+version '1.0.3'
 apply plugin: 'java'
 
 sourceCompatibility = 1.8
@@ -43,7 +43,14 @@ test {
 }
 
 jar {
+    duplicatesStrategy = 'include'
+    baseName 'doku-toolkit'
+
     manifest {
-        attributes 'Main-Class': 'com.karyasarma.ninjavan_toolkit.NinjavanToolkitMain'
+        attributes 'Main-Class': 'com.karyasarma.ninjavan_toolkit.DokuToolkitMain'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
