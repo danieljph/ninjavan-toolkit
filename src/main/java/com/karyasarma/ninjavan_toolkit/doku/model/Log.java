@@ -7,6 +7,11 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * Sample Log:
+ * {"@timestamp":"2022-11-22T07:35:53.716+00:00","severity":"INFO","service":"gtw-config-api","trace":"2da9887db258b1dd","span":"dfa905e8399ebb54","parent":"2da9887db258b1dd","exportable":"false","pid":"6","thread":"http-nio-8080-exec-5","class":"c.d.g.c.api.interceptor.JwtInterceptor","rest":"validate jwt: GET=/v2/merchant-channel/channel/VIRTUAL_ACCOUNT_BANK_PERMATA/MCH-8927-1636448248076 "}
+ * {"@timestamp":"2022-11-22T07:35:53.716+00:00","severity":"INFO","service":"gtw-config-api","trace":"2da9887db258b1dd","span":"dfa905e8399ebb54","parent":"2da9887db258b1dd","exportable":"false","pid":"6","thread":"http-nio-8080-exec-5","class":"c.d.g.c.api.interceptor.JwtInterceptor","rest":"isValidatePermission data: GET=/v2/merchant-channel/channel/VIRTUAL_ACCOUNT_BANK_PERMATA/MCH-8927-1636448248076:JwtUserDTO(businessServiceClientId=MCH-8927-1636448248076, businessClientId=BSN-8925-1636448247511, userFullName=Aldy surya wahyudi, userEmail=aldy@doku.com, userType=Internal, roleName=IT, permission=[CRUD]) "}
+ * {"@timestamp":"2022-11-22T07:35:53.807+00:00","severity":"INFO","service":"gtw-config-api","trace":"ae4ca3b0f23d868a","span":"c6257d58c31eb40b","parent":"ae4ca3b0f23d868a","exportable":"false","pid":"6","thread":"http-nio-8080-exec-9","class":"c.d.g.c.api.interceptor.JwtInterceptor","rest":"validate jwt: GET=/v2/merchant-channel/channel/VIRTUAL_ACCOUNT_BANK_DANAMON/MCH-8927-1636448248076 "}
+ *
+ * Sample Beautify Log:
  * {
  *   "@timestamp":"2022-11-22T07:35:53.716+00:00",
  *   "severity":"INFO",
@@ -128,7 +133,6 @@ public class Log
     @Override
     public String toString()
     {
-        //2022-11-24 19:28:26.771 DEBUG [gtw-va-mandiri,,,] 7 --- [nio-8080-exec-7] o.apache.catalina.valves.RemoteIpValve   : Incoming request /mandiri-virtual-account/actuator/heal
         return String.format("%s %s [%s]-[%s] %s - %s", getTimestamp(), StringUtils.rightPad(getSeverity(), 5), getService(), getThread(), getClazz(), getRest());
     }
 }
