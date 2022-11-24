@@ -53,8 +53,6 @@ public class BarcodeReader
             }
             return false;
         });
-
-        System.out.println("44444");
     }
 
     protected void fireBarcode(String barcode)
