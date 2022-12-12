@@ -1,5 +1,6 @@
 package com.karyasarma.ninjavan_toolkit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karyasarma.ninjavan_toolkit.doku.model.Log;
 
 import javax.swing.*;
@@ -23,7 +24,11 @@ public class DokuToolkitMain implements ActionListener
 
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
     private final SimpleMenu parseLogsSm = new SimpleMenu("Parse Logs");
+    private final SimpleMenu parseLogsRemoveFailedLineSm = new SimpleMenu("Parse Logs Remove Failed Line");
+    private final SimpleMenu prettyJsonSm = new SimpleMenu("Pretty JSON");
     private MenuItem quitMi;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     public DokuToolkitMain()
     {
@@ -40,7 +45,9 @@ public class DokuToolkitMain implements ActionListener
 
         PopupMenu popupMenu = new PopupMenu();
 
-        listOfSimpleMenu.add(new SimpleMenu("Parse Logs"));
+        listOfSimpleMenu.add(parseLogsSm);
+        listOfSimpleMenu.add(parseLogsRemoveFailedLineSm);
+        listOfSimpleMenu.add(prettyJsonSm);
 
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
@@ -76,7 +83,36 @@ public class DokuToolkitMain implements ActionListener
             {
                 String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n"+logsData);
-                copyToClipboard(Log.parse(logsData));
+                copyToClipboard(Log.parse(logsData, false));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(parseLogsRemoveFailedLineSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n"+logsData);
+                copyToClipboard(Log.parse(logsData, true));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(prettyJsonSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("JSON Data: \n"+jsonData);
+                Object temp = objectMapper.readValue(jsonData, Object.class);
+                copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
             }
             catch(Exception ex)
             {
