@@ -39,6 +39,7 @@ public class Log
     private String thread;
     @JsonProperty("class") private String clazz;
     private String rest;
+    private String message;
 
     public Log()
     {
@@ -104,6 +105,16 @@ public class Log
         this.rest = rest;
     }
 
+    public String getMessage()
+    {
+        return message;
+    }
+
+    public void setMessage(String message)
+    {
+        this.message = message;
+    }
+
     public static String parse(String logsData, boolean removeFailedLine)
     {
         StringBuilder sb = new StringBuilder();
@@ -139,9 +150,14 @@ public class Log
         return sb.toString();
     }
 
+    private String getInfo()
+    {
+        return Optional.ofNullable(getRest()).orElse(getMessage());
+    }
+
     @Override
     public String toString()
     {
-        return String.format("%s %s [%s]-[%s] %s - %s", getTimestamp(), StringUtils.rightPad(getSeverity(), 5), Optional.ofNullable(getService()).orElse("service-null"), Optional.ofNullable(getThread()).orElse("thread-null"), Optional.ofNullable(getClazz()).orElse("class-null"), getRest());
+        return String.format("%s %s [%s]-[%s] %s - %s", getTimestamp(), StringUtils.rightPad(getSeverity(), 5), Optional.ofNullable(getService()).orElse("service-null"), Optional.ofNullable(getThread()).orElse("thread-null"), Optional.ofNullable(getClazz()).orElse("class-null"), getInfo());
     }
 }
