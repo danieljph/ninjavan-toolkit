@@ -36,6 +36,9 @@ public class Log
     @JsonProperty("@timestamp") private String timestamp;
     private String severity;
     private String service;
+    private String trace;
+    private String span;
+    private String parent;
     private String thread;
     @JsonProperty("class") private String clazz;
     private String rest;
@@ -73,6 +76,36 @@ public class Log
     public void setService(String service)
     {
         this.service = service;
+    }
+
+    public String getTrace()
+    {
+        return trace;
+    }
+
+    public void setTrace(String trace)
+    {
+        this.trace = trace;
+    }
+
+    public String getSpan()
+    {
+        return span;
+    }
+
+    public void setSpan(String span)
+    {
+        this.span = span;
+    }
+
+    public String getParent()
+    {
+        return parent;
+    }
+
+    public void setParent(String parent)
+    {
+        this.parent = parent;
     }
 
     public String getThread()
@@ -158,6 +191,15 @@ public class Log
     @Override
     public String toString()
     {
-        return String.format("%s %s [%s]-[%s] %s - %s", getTimestamp(), StringUtils.rightPad(getSeverity(), 5), Optional.ofNullable(getService()).orElse("service-null"), Optional.ofNullable(getThread()).orElse("thread-null"), Optional.ofNullable(getClazz()).orElse("class-null"), getInfo());
+        return String.format("%s %s [%s]-[t:%s, s:%s, p:%s]-[%s] %s - %s",
+                getTimestamp(),
+                StringUtils.rightPad(getSeverity(), 5),
+                Optional.ofNullable(getService()).orElse("service-null"),
+                Optional.ofNullable(getTrace()).orElse(""),
+                Optional.ofNullable(getSpan()).orElse(""),
+                Optional.ofNullable(getParent()).orElse(""),
+                Optional.ofNullable(getThread()).orElse("thread-null"),
+                Optional.ofNullable(getClazz()).orElse("class-null"),
+                getInfo());
     }
 }

@@ -1,62 +1,53 @@
 package com.karyasarma.ninjavan_toolkit;
 
-import com.github.sarxos.webcam.Webcam;
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.NotFoundException;
-import com.google.zxing.Result;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
+import org.apache.commons.codec.binary.Base64OutputStream;
 
-import javax.imageio.ImageIO;
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * @author Daniel Joi Partogi Hutapea
  */
 public class Test
 {
-    public static void main(String[] args) throws IOException
+    public static String gzipAndBase64(String rawValue)
     {
-        Webcam webcam = Webcam.getDefault();
-        webcam.setViewSize(new Dimension(640, 480));
-        webcam.open();
+        String result = rawValue;
+        long l1 = System.currentTimeMillis();
 
         try
         {
-            while(true)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Base64OutputStream b64os = new Base64OutputStream(baos);
+            GZIPOutputStream gzip = new GZIPOutputStream(b64os);
+            gzip.write(rawValue.getBytes(StandardCharsets.UTF_8));
+            gzip.close();
+            b64os.close();
+            String base64Result = new String(baos.toByteArray(), StandardCharsets.UTF_8).replaceAll("\r\n", "");
+            String newValue = "GZIP_BASE64(" + base64Result + ')';
+
+            if(newValue.length()<rawValue.length())
             {
-                try
-                {
-                    BufferedImage bufferedImage = webcam.getImage();
-                    BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(bufferedImage)));
-                    Result qrCodeResult = new MultiFormatReader().decode(binaryBitmap);
-                    System.out.println(qrCodeResult.getText());
-                }
-                catch(NotFoundException ex)
-                {
-                    ex.printStackTrace(System.err);
-                }
+                result = newValue;
             }
+        }
+        catch(Exception ex)
+        {
+            ex.printStackTrace();
         }
         finally
         {
-            webcam.close();
+            long l2 = System.currentTimeMillis();
+            System.out.printf("Duration (gzipAndBase64): %dms\n", (l2-l1));
         }
+
+        return result;
     }
 
-    public static void pause(long millis)
+    public static void main(String[] args)
     {
-        try
-        {
-            Thread.sleep(millis);
-        }
-        catch(InterruptedException ignore)
-        {
-        }
+        String rawValue = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        System.out.println(gzipAndBase64(rawValue));
     }
 }

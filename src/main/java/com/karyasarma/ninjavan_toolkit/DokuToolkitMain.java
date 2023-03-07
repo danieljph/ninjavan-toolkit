@@ -2,6 +2,7 @@ package com.karyasarma.ninjavan_toolkit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karyasarma.ninjavan_toolkit.doku.model.Log;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +27,9 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu parseLogsSm = new SimpleMenu("Parse Logs");
     private final SimpleMenu parseLogsRemoveFailedLineSm = new SimpleMenu("Parse Logs Remove Failed Line");
     private final SimpleMenu prettyJsonSm = new SimpleMenu("Pretty JSON");
+    private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
+    private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN");
+    private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP");
     private MenuItem quitMi;
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -48,6 +52,9 @@ public class DokuToolkitMain implements ActionListener
         listOfSimpleMenu.add(parseLogsSm);
         listOfSimpleMenu.add(parseLogsRemoveFailedLineSm);
         listOfSimpleMenu.add(prettyJsonSm);
+        listOfSimpleMenu.add(toOldCurlSm);
+        listOfSimpleMenu.add(passwordVpnSm);
+        listOfSimpleMenu.add(passwordLdapSm);
 
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
@@ -119,6 +126,47 @@ public class DokuToolkitMain implements ActionListener
                 ex.printStackTrace(System.err);
             }
             return;
+        }
+        else if(toOldCurlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String curlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("cURL Data: \n"+curlData);
+                String curlDataOld = curlData.replaceAll("--data-raw", "--data");
+                copyToClipboard(curlDataOld);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(passwordVpnSm.getName().equals(actionCommand))
+        {
+            String passwordVpn = System.getenv("PASSWORD_VPN");
+
+            if(StringUtils.isBlank(passwordVpn))
+            {
+                JOptionPane.showMessageDialog(null, "Environment variable with name 'PASSWORD_VPN' does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            else
+            {
+                copyToClipboard(passwordVpn);
+            }
+        }
+        else if(passwordLdapSm.getName().equals(actionCommand))
+        {
+            String passwordVpn = System.getenv("PASSWORD_LDAP");
+
+            if(StringUtils.isBlank(passwordVpn))
+            {
+                JOptionPane.showMessageDialog(null, "Environment variable with name 'PASSWORD_LDAP' does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            else
+            {
+                copyToClipboard(passwordVpn);
+            }
         }
 
         Object source = evt.getSource();
