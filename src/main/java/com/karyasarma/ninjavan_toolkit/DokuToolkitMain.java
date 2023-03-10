@@ -144,7 +144,7 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(passwordVpnSm.getName().equals(actionCommand))
         {
-            String passwordVpn = System.getenv("PASSWORD_VPN");
+            String passwordVpn = System.getenv("VPN_PASSWORD");
 
             if(StringUtils.isBlank(passwordVpn))
             {
@@ -157,7 +157,7 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(passwordLdapSm.getName().equals(actionCommand))
         {
-            String passwordVpn = System.getenv("PASSWORD_LDAP");
+            String passwordVpn = System.getenv("LDAP_PASSWORD");
 
             if(StringUtils.isBlank(passwordVpn))
             {
