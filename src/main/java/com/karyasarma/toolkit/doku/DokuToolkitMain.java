@@ -3,6 +3,7 @@ package com.karyasarma.toolkit.doku;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
+import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,8 +23,6 @@ import java.util.ArrayList;
 @SuppressWarnings("WeakerAccess")
 public class DokuToolkitMain implements ActionListener
 {
-    //private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
-
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
     private final SimpleMenu separatorSm = new SimpleMenu("Separator");
 
@@ -36,6 +35,9 @@ public class DokuToolkitMain implements ActionListener
 
     private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML");
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML");
+
+    private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (UAT)");
+    private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (UAT)");
 
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
 
@@ -63,15 +65,28 @@ public class DokuToolkitMain implements ActionListener
         listOfSimpleMenu.add(parseLogsSimplifiedSm);
         listOfSimpleMenu.add(parseLogsSm);
         listOfSimpleMenu.add(parseLogsRemoveFailedLineSm);
+
         listOfSimpleMenu.add(separatorSm);
+
         listOfSimpleMenu.add(prettyJsonSm);
         listOfSimpleMenu.add(compactJsonSm);
+
         listOfSimpleMenu.add(separatorSm);
+
         listOfSimpleMenu.add(prettyXmlSm);
         listOfSimpleMenu.add(compactXmlSm);
+
         listOfSimpleMenu.add(separatorSm);
+
         listOfSimpleMenu.add(toOldCurlSm);
+
         listOfSimpleMenu.add(separatorSm);
+
+        listOfSimpleMenu.add(aesEncryptSm);
+        listOfSimpleMenu.add(aesDecryptSm);
+
+        listOfSimpleMenu.add(separatorSm);
+
         listOfSimpleMenu.add(passwordVpnSm);
         listOfSimpleMenu.add(passwordLdapSm);
 
@@ -218,6 +233,42 @@ public class DokuToolkitMain implements ActionListener
                 System.out.println("cURL Data: \n"+curlData);
                 String curlDataOld = curlData.replaceAll("--data-raw", "--data");
                 copyToClipboard(curlDataOld);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(aesEncryptSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String plainPassword = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("plainPassword Data: "+plainPassword);
+
+                if(StringUtils.isNotBlank(plainPassword))
+                {
+                    copyToClipboard(EncryptionUtils.encrypt(plainPassword));
+                }
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(aesDecryptSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String cipherPassword = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("cipherPassword Data: "+cipherPassword);
+
+                if(StringUtils.isNotBlank(cipherPassword))
+                {
+                    copyToClipboard(EncryptionUtils.decrypt(cipherPassword));
+                }
             }
             catch(Exception ex)
             {
