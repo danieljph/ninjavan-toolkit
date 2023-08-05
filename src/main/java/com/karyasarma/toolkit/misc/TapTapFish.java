@@ -1,6 +1,5 @@
-package com.karyasarma.ninjavan_toolkit;
+package com.karyasarma.toolkit.misc;
 
-import java.awt.*;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -9,15 +8,16 @@ import java.util.Queue;
  *
  * @author Daniel Joi Partogi Hutapea
  */
+@SuppressWarnings("unused")
 public class TapTapFish
 {
-    private Queue<Loc> listOfLoc = new LinkedList<>();
+    private final Queue<Loc> listOfLoc = new LinkedList<>();
 
     public TapTapFish()
     {
     }
 
-    public class Loc
+    public static class Loc
     {
         public int x;
         public int y;
@@ -58,6 +58,7 @@ public class TapTapFish
         {
         }
 
+        @SuppressWarnings("InfiniteLoopStatement")
         @Override
         public void run()
         {
@@ -75,6 +76,7 @@ public class TapTapFish
         {
         }
 
+        @SuppressWarnings("InfiniteLoopStatement")
         @Override
         public void run()
         {
@@ -100,7 +102,7 @@ public class TapTapFish
         try
         {
             Runtime.getRuntime().exec(String.format("adb shell input tap %d %d", x, y));
-            System.out.println(String.format("Tap: [%s, %s]", x, y));
+            System.out.printf("Tap: [%s, %s]%n", x, y);
         }
         catch(IOException ex)
         {
@@ -114,11 +116,12 @@ public class TapTapFish
         {
             Thread.sleep(millis);
         }
-        catch(InterruptedException ex)
+        catch(InterruptedException ignored)
         {
         }
     }
 
+    @SuppressWarnings("CommentedOutCode")
     public void start()
     {
         new TapProducer().start();

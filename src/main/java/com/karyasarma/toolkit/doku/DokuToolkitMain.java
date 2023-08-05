@@ -1,7 +1,9 @@
-package com.karyasarma.ninjavan_toolkit;
+package com.karyasarma.toolkit.doku;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.karyasarma.ninjavan_toolkit.doku.model.Log;
+import com.karyasarma.toolkit.doku.model.Log;
+import com.karyasarma.toolkit.doku.ui.SimpleMenu;
+import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -11,7 +13,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /**
@@ -21,18 +22,28 @@ import java.util.ArrayList;
 @SuppressWarnings("WeakerAccess")
 public class DokuToolkitMain implements ActionListener
 {
-    private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
+    //private static final SimpleDateFormat CURRENT_DATE_SDF = new SimpleDateFormat("EEE, MMMM dd, yyyy hh:mm:ss a 'UTC'X");
 
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
+    private final SimpleMenu separatorSm = new SimpleMenu("Separator");
+
+    private final SimpleMenu parseLogsSimplifiedSm = new SimpleMenu("Parse Logs (Simplified)");
     private final SimpleMenu parseLogsSm = new SimpleMenu("Parse Logs");
-    private final SimpleMenu parseLogsRemoveFailedLineSm = new SimpleMenu("Parse Logs Remove Failed Line");
+    private final SimpleMenu parseLogsRemoveFailedLineSm = new SimpleMenu("Parse Logs (Remove Un-parsed Line)");
+
     private final SimpleMenu prettyJsonSm = new SimpleMenu("Pretty JSON");
+    private final SimpleMenu compactJsonSm = new SimpleMenu("Compact JSON");
+
+    private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML");
+    private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML");
+
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
+
     private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN");
     private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP");
     private MenuItem quitMi;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public DokuToolkitMain()
     {
@@ -49,19 +60,34 @@ public class DokuToolkitMain implements ActionListener
 
         PopupMenu popupMenu = new PopupMenu();
 
+        listOfSimpleMenu.add(parseLogsSimplifiedSm);
         listOfSimpleMenu.add(parseLogsSm);
         listOfSimpleMenu.add(parseLogsRemoveFailedLineSm);
+        listOfSimpleMenu.add(separatorSm);
         listOfSimpleMenu.add(prettyJsonSm);
+        listOfSimpleMenu.add(compactJsonSm);
+        listOfSimpleMenu.add(separatorSm);
+        listOfSimpleMenu.add(prettyXmlSm);
+        listOfSimpleMenu.add(compactXmlSm);
+        listOfSimpleMenu.add(separatorSm);
         listOfSimpleMenu.add(toOldCurlSm);
+        listOfSimpleMenu.add(separatorSm);
         listOfSimpleMenu.add(passwordVpnSm);
         listOfSimpleMenu.add(passwordLdapSm);
 
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
-            MenuItem menuItem = new MenuItem(simpleMenu.getName());
-            menuItem.setActionCommand(simpleMenu.getName());
-            menuItem.addActionListener(this);
-            popupMenu.add(menuItem);
+            if(simpleMenu==separatorSm)
+            {
+                popupMenu.addSeparator();
+            }
+            else
+            {
+                MenuItem menuItem = new MenuItem(simpleMenu.getName());
+                menuItem.setActionCommand(simpleMenu.getName());
+                menuItem.addActionListener(this);
+                popupMenu.add(menuItem);
+            }
         }
 
         popupMenu.addSeparator();
@@ -72,7 +98,7 @@ public class DokuToolkitMain implements ActionListener
 
         Image image = Toolkit.getDefaultToolkit().getImage(DokuToolkitMain.class.getResource("/images/ninjavan.ico"));
 
-        TrayIcon trayIcon = new TrayIcon(image, "Ninja Van Toolkit");
+        TrayIcon trayIcon = new TrayIcon(image, "Doku Toolkit");
         trayIcon.setPopupMenu(popupMenu);
 
         SystemTray systemTray = SystemTray.getSystemTray();
@@ -84,13 +110,27 @@ public class DokuToolkitMain implements ActionListener
     {
         String actionCommand = evt.getActionCommand();
 
-        if(parseLogsSm.getName().equals(actionCommand))
+        if(parseLogsSimplifiedSm.getName().equals(actionCommand))
         {
             try
             {
                 String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n"+logsData);
-                copyToClipboard(Log.parse(logsData, false));
+                copyToClipboard(Log.parse(logsData, false, true));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(parseLogsSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n"+logsData);
+                copyToClipboard(Log.parse(logsData, false, false));
             }
             catch(Exception ex)
             {
@@ -104,7 +144,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n"+logsData);
-                copyToClipboard(Log.parse(logsData, true));
+                copyToClipboard(Log.parse(logsData, true, false));
             }
             catch(Exception ex)
             {
@@ -120,6 +160,49 @@ public class DokuToolkitMain implements ActionListener
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
                 copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(compactJsonSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("JSON Data: \n"+jsonData);
+                Object temp = objectMapper.readValue(jsonData, Object.class);
+                copyToClipboard(objectMapper.writeValueAsString(temp));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(prettyXmlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("XML Data: \n"+xmlData);
+                copyToClipboard(XmlUtils.prettyPrint(xmlData, 4, false));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(compactXmlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("XML Data: \n"+xmlData);
+                copyToClipboard(XmlUtils.compactPrint(xmlData));
             }
             catch(Exception ex)
             {

@@ -1,4 +1,4 @@
-package com.karyasarma.ninjavan_toolkit;
+package com.karyasarma.toolkit.misc;
 
 import org.apache.commons.codec.binary.Base64OutputStream;
 

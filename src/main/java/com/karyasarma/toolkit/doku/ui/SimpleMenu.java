@@ -1,9 +1,10 @@
-package com.karyasarma.ninjavan_toolkit;
+package com.karyasarma.toolkit.doku.ui;
 
 /**
  *
  * @author Daniel Joi Partogi Hutapea
  */
+@SuppressWarnings("unused")
 public class SimpleMenu
 {
     private String name;
