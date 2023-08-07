@@ -111,9 +111,10 @@ public class DokuToolkitMain implements ActionListener
         quitMi.addActionListener(this);
         popupMenu.add(quitMi);
 
-        Image image = Toolkit.getDefaultToolkit().getImage(DokuToolkitMain.class.getResource("/images/ninjavan.ico"));
+        Image image = Toolkit.getDefaultToolkit().getImage(DokuToolkitMain.class.getResource("/images/ninjavan.png"));
 
         TrayIcon trayIcon = new TrayIcon(image, "Doku Toolkit");
+        trayIcon.setImageAutoSize(true);
         trayIcon.setPopupMenu(popupMenu);
 
         SystemTray systemTray = SystemTray.getSystemTray();
@@ -326,9 +327,10 @@ public class DokuToolkitMain implements ActionListener
     {
         try
         {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             showSystemTray();
         }
-        catch(AWTException ex)
+        catch(Exception ex)
         {
             throw new RuntimeException(ex);
         }
@@ -336,7 +338,11 @@ public class DokuToolkitMain implements ActionListener
 
     public static void main(String[] args)
     {
-        System.setProperty("apple.awt.UIElement", "true");
+        if(System.getProperty("os.name").toLowerCase().contains("mac"))
+        {
+            System.setProperty("apple.awt.UIElement", "true"); // Make no Java Icon in Mac-OS Doc
+        }
+
         new DokuToolkitMain().start();
     }
 }
