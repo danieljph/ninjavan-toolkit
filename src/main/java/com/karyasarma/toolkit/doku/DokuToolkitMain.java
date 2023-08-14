@@ -279,11 +279,12 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(passwordVpnSm.getName().equals(actionCommand))
         {
-            String passwordVpn = System.getenv("VPN_PASSWORD");
+            String envVarName = "VPN_PASSWORD";
+            String passwordVpn = System.getenv(envVarName);
 
             if(StringUtils.isBlank(passwordVpn))
             {
-                JOptionPane.showMessageDialog(null, "Environment variable with name 'PASSWORD_VPN' does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, String.format("Environment variable with name '%s' does not exist!", envVarName), "Error", JOptionPane.ERROR_MESSAGE);
             }
             else
             {
@@ -292,11 +293,12 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(passwordLdapSm.getName().equals(actionCommand))
         {
-            String passwordVpn = System.getenv("LDAP_PASSWORD");
+            String envVarName = "LDAP_PASSWORD";
+            String passwordVpn = System.getenv(envVarName);
 
             if(StringUtils.isBlank(passwordVpn))
             {
-                JOptionPane.showMessageDialog(null, "Environment variable with name 'PASSWORD_LDAP' does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, String.format("Environment variable with name '%s' does not exist!", envVarName), "Error", JOptionPane.ERROR_MESSAGE);
             }
             else
             {
