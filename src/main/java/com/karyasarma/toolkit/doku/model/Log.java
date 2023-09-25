@@ -2,6 +2,7 @@ package com.karyasarma.toolkit.doku.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
@@ -162,7 +163,15 @@ public class Log
             {
                 try
                 {
-                    Log log = om.readValue(logStr, Log.class);
+                    LogWrapper logWrapper = om.readValue(logStr, LogWrapper.class);
+                    String logContent = logStr;
+
+                    if(logWrapper.getContent()!=null)
+                    {
+                        logContent = logWrapper.getContent();
+                    }
+
+                    Log log = om.readValue(logContent, Log.class);
                     sb.append(log.toString(simplified)).append("\n");
                 }
                 catch(Exception ignore)
@@ -195,7 +204,7 @@ public class Log
         {
             return String.format("%s %s %s - %s",
                     getTimestamp(),
-                    StringUtils.rightPad(getSeverity(), 5),
+                    StringUtils.leftPad(getSeverity(), 5),
                     Optional.ofNullable(getClazz()).orElse("class-null"),
                     getInfo());
         }
@@ -203,6 +212,18 @@ public class Log
         {
             return toString();
         }
+    }
+
+    public static void main(String[] args) throws JsonProcessingException
+    {
+        String data = "{\"Time\":\"2023-09-12 21:10:09.000\",\"content\":\"{\\\"@timestamp\\\":\\\"2023-09-12T13:10:08.504Z\\\",\\\"severity\\\":\\\"INFO\\\",\\\"trace\\\":\\\"7880c1eb88f2b961\\\",\\\"thread\\\":\\\"http-nio-8080-exec-3\\\",\\\"class\\\":\\\"c.d.m.ocojokul.payment.common.RestClient\\\",\\\"rest\\\":\\\"http status code : 200, host : devex-check-status-api.jokul-devex.svc, path:/orders/v1/status/2000578104  \\\"}\"}";
+
+        ObjectMapper om = new ObjectMapper();
+        LogWrapper logWrapper = om.readValue(data, LogWrapper.class);
+        String content = logWrapper.getContent();
+
+        String result = Log.parse(content, true, true);
+        System.out.println(result);
     }
 
     @Override
