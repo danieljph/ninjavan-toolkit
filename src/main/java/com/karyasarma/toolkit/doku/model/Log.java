@@ -152,6 +152,16 @@ public class Log
 
     public static String parse(String logsData, boolean removeFailedLine, boolean simplified)
     {
+        try
+        {
+            return AckLogV1.parse(logsData, simplified);
+        }
+        catch(Exception ex)
+        {
+            ex.printStackTrace(System.out);
+        }
+
+        // Try to parse using another method.
         StringBuilder sb = new StringBuilder();
         ObjectMapper om = new ObjectMapper();
 
