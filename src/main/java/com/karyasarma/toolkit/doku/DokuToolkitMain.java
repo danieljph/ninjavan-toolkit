@@ -5,6 +5,7 @@ import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -14,7 +15,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -39,6 +44,8 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (UAT)");
     private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (UAT)");
 
+    private final SimpleMenu getFileContentSm = new SimpleMenu("Get File Content");
+    private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically");
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
 
     private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN");
@@ -78,6 +85,8 @@ public class DokuToolkitMain implements ActionListener
 
         listOfSimpleMenu.add(separatorSm);
 
+        listOfSimpleMenu.add(getFileContentSm);
+        listOfSimpleMenu.add(sortAlphabeticallySm);
         listOfSimpleMenu.add(toOldCurlSm);
 
         listOfSimpleMenu.add(separatorSm);
@@ -121,6 +130,7 @@ public class DokuToolkitMain implements ActionListener
         systemTray.add(trayIcon);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void actionPerformed(ActionEvent evt)
     {
@@ -219,6 +229,41 @@ public class DokuToolkitMain implements ActionListener
                 String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("XML Data: \n"+xmlData);
                 copyToClipboard(XmlUtils.compactPrint(xmlData));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(getFileContentSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                java.util.List<File> listOfFile = (java.util.List<File>) getSystemClipboard().getData(DataFlavor.javaFileListFlavor);
+
+                if(ObjectUtils.isNotEmpty(listOfFile))
+                {
+                    File file = listOfFile.get(0); // We only get the first File from list.
+                    String fileContent = new String(Files.readAllBytes(file.toPath()));
+                    copyToClipboard(fileContent);
+                }
+            }
+            catch(Exception ex)
+            {
+                copyToClipboard(ex.getClass()+": "+ex.getMessage());
+                ex.printStackTrace(System.err);
+            }
+            return;
+        }
+        else if(sortAlphabeticallySm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String unsorted = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Unsorted Data: \n"+unsorted);
+                String sorted = Arrays.stream(unsorted.split("\n")).map(String::trim).sorted().collect(Collectors.joining("\n"));
+                copyToClipboard(sorted);
             }
             catch(Exception ex)
             {
