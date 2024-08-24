@@ -52,6 +52,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AckLogV1
 {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private String containerName;
     private Log content;
 
@@ -79,8 +81,7 @@ public class AckLogV1
     {
         try
         {
-            ObjectMapper om = new ObjectMapper();
-            List<AckLogV1> listOfAckLogV1 = om.readValue(logsData, new TypeReference<List<AckLogV1>>(){});
+            List<AckLogV1> listOfAckLogV1 = OBJECT_MAPPER.readValue(logsData, new TypeReference<List<AckLogV1>>(){});
 
             if(listOfAckLogV1==null || listOfAckLogV1.isEmpty())
             {

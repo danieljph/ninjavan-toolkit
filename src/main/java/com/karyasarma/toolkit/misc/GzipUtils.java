@@ -9,7 +9,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * @author Daniel Joi Partogi Hutapea
  */
-public class Test
+public class GzipUtils
 {
     public static String gzipAndBase64(String rawValue)
     {
@@ -34,7 +34,7 @@ public class Test
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            ex.printStackTrace(System.err);
         }
         finally
         {
@@ -43,11 +43,5 @@ public class Test
         }
 
         return result;
-    }
-
-    public static void main(String[] args)
-    {
-        String rawValue = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-        System.out.println(gzipAndBase64(rawValue));
     }
 }
