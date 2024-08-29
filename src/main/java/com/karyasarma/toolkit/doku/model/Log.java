@@ -2,7 +2,6 @@ package com.karyasarma.toolkit.doku.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +44,8 @@ public class Log
     @JsonProperty("class") private String clazz;
     private String rest;
     private String message;
+
+    private String containerName; // Got from com.karyasarma.toolkit.doku.model.LogWrapper.java.
 
     public Log()
     {
@@ -150,6 +151,16 @@ public class Log
         this.message = message;
     }
 
+    public String getContainerName()
+    {
+        return containerName;
+    }
+
+    public void setContainerName(String containerName)
+    {
+        this.containerName = containerName;
+    }
+
     public static String parse(String logsData, boolean removeFailedLine, boolean simplified)
     {
         try
@@ -182,6 +193,7 @@ public class Log
                     }
 
                     Log log = om.readValue(logContent, Log.class);
+                    log.setContainerName(logWrapper.getContainerName());
                     sb.append(log.toString(simplified)).append("\n");
                 }
                 catch(Exception ignore)
@@ -230,7 +242,7 @@ public class Log
         return String.format("%s %s [%s]-[t:%s, s:%s, p:%s]-[%s] %s - %s",
                 getTimestamp(),
                 StringUtils.rightPad(getSeverity(), 5),
-                Optional.ofNullable(getService()).orElse("service-null"),
+                Optional.ofNullable(getService()).orElse(Optional.ofNullable(getContainerName()).orElse("service-null")),
                 Optional.ofNullable(getTrace()).orElse(""),
                 Optional.ofNullable(getSpan()).orElse(""),
                 Optional.ofNullable(getParent()).orElse(""),

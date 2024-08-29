@@ -1,6 +1,7 @@
 package com.karyasarma.toolkit.doku.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Sample LogWrapper:
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class LogWrapper
 {
     private String content;
+    @JsonProperty("_container_name_") private String containerName;
 
     public LogWrapper()
     {
@@ -26,5 +28,15 @@ public class LogWrapper
     public void setContent(String content)
     {
         this.content = content;
+    }
+
+    public String getContainerName()
+    {
+        return containerName;
+    }
+
+    public void setContainerName(String containerName)
+    {
+        this.containerName = containerName;
     }
 }
