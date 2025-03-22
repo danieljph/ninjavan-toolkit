@@ -50,7 +50,8 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu dbeaverCopyAsJsonToTextPrintNullAsEmptyStringAndSortByColumnNameSm = new SimpleMenu("Print [NULL] as Empty String + Sort by Column Name", new MenuShortcut(KeyEvent.VK_E, true));
     private final SimpleMenu dbeaverCopyAsJsonToTextSortByColumnNameSm = new SimpleMenu("Sort by Column Name", new MenuShortcut(KeyEvent.VK_E));
 
-    private final SimpleMenu createJsonSchemaSm = new SimpleMenu("Create JSON Schema", new MenuShortcut(KeyEvent.VK_H));
+    private final SimpleMenu createJsonSchemaSmMode1 = new SimpleMenu("Create JSON Schema", new MenuShortcut(KeyEvent.VK_H));
+    private final SimpleMenu createJsonSchemaSmMode2 = new SimpleMenu("Create JSON Schema (Array Contains)", new MenuShortcut(KeyEvent.VK_I));
 
     private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML", new MenuShortcut(KeyEvent.VK_X));
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML", new MenuShortcut(KeyEvent.VK_X, true));
@@ -114,7 +115,8 @@ public class DokuToolkitMain implements ActionListener
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextPrintNullAsEmptyStringAndSortByColumnNameSm);
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextSortByColumnNameSm);
 
-        listOfSimpleMenu.add(createJsonSchemaSm);
+        listOfSimpleMenu.add(createJsonSchemaSmMode1);
+        listOfSimpleMenu.add(createJsonSchemaSmMode2);
 
         listOfSimpleMenu.add(separatorSm);
 
@@ -255,13 +257,26 @@ public class DokuToolkitMain implements ActionListener
         {
             processCommandDbeaverCopyAsJsonToText(false, true);
         }
-        else if(createJsonSchemaSm.getName().equals(actionCommand))
+        else if(createJsonSchemaSmMode1.getName().equals(actionCommand))
         {
             try
             {
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData));
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(createJsonSchemaSmMode2.getName().equals(actionCommand))
+        {
+            try
+            {
+                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("JSON Data: \n"+jsonData);
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true));
             }
             catch(Exception ex)
             {

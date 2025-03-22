@@ -9,7 +9,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 
 public class JsonSchemaUtil
@@ -24,14 +26,14 @@ public class JsonSchemaUtil
     {
     }
 
-    public static String generateJsonSchema(String json) throws IOException
+    public static String generateJsonSchema(String json, boolean useArrayContains) throws IOException
     {
-        String jsonSchema = outputAsString("${tcId}", "${tcDesc}", json, null);
+        String jsonSchema = outputAsString("${tcId}", "${tcDesc}", json, null, useArrayContains);
         Object temp = objectMapper.readValue(jsonSchema, Object.class);
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp);
     }
 
-    private static String outputAsString(String title, String description, String json, JsonNodeType type) throws IOException
+    private static String outputAsString(String title, String description, String json, JsonNodeType type, boolean useArrayContains) throws IOException
     {
         JsonNode jsonNode = objectMapper.readTree(json);
         StringBuilder output = new StringBuilder();
@@ -51,7 +53,7 @@ public class JsonSchemaUtil
         {
             String fieldName = iterator.next();
             JsonNodeType nodeType = jsonNode.get(fieldName).getNodeType();
-            output.append(convertNodeToStringSchemaNode(jsonNode, nodeType, fieldName));
+            output.append(convertNodeToStringSchemaNode(jsonNode, nodeType, fieldName, useArrayContains));
 
             if(iterator.hasNext())
             {
@@ -68,7 +70,7 @@ public class JsonSchemaUtil
         return output.toString();
     }
 
-    private static String convertNodeToStringSchemaNode(JsonNode parentNode, JsonNodeType parentNodeType, String key) throws IOException
+    private static String convertNodeToStringSchemaNode(JsonNode parentNode, JsonNodeType parentNodeType, String key, boolean useArrayContains) throws IOException
     {
         StringBuilder result = new StringBuilder("\"" + key + "\": { \"type\": \"");
         JsonNode node;
@@ -77,21 +79,57 @@ public class JsonSchemaUtil
         {
             case ARRAY:
                 node = parentNode.get(key);
-                result.append("array\", \"items\": [");
 
-                for(int i=0; i<node.size(); i++)
+                if(!useArrayContains)
                 {
-                    result.append("{ \"properties\":");
-                    result.append(outputAsString(null, null, node.get(i).toString(), JsonNodeType.ARRAY));
-                    result.append("}");
+                    result.append("array\", \"items\": [");
 
-                    if(i<node.size()-1)
+                    for(int i=0; i<node.size(); i++)
                     {
-                        result.append(",");
+                        result.append("{ \"properties\":");
+                        result.append(outputAsString(null, null, node.get(i).toString(), JsonNodeType.ARRAY, useArrayContains));
+                        result.append("}");
+
+                        if(i<node.size()-1)
+                        {
+                            result.append(",");
+                        }
                     }
+
+                    result.append("]}");
+                }
+                else
+                {
+                    result.append("array\", \"allOf\": [");
+
+                    for(int i=0; i<node.size(); i++)
+                    {
+
+                        String nodeAsString = node.get(i).toString();
+                        JsonNode jsonNode = objectMapper.readTree(nodeAsString);
+                        List<String> listOfFieldNames = new ArrayList<>();
+
+                        for(Iterator<String> iterator = jsonNode.fieldNames(); iterator.hasNext();)
+                        {
+                            String fieldName = iterator.next();
+                            listOfFieldNames.add('"' + fieldName + '"');
+                        }
+
+                        String listOfFieldNamesAsString = String.join(", ", listOfFieldNames);
+
+                        result.append(String.format("{\"contains\" : { \"required\" : [ %s ], \"properties\" :", listOfFieldNamesAsString));
+                        result.append(outputAsString(null, null, nodeAsString, JsonNodeType.ARRAY, useArrayContains));
+                        result.append("}}");
+
+                        if(i<node.size()-1)
+                        {
+                            result.append(",");
+                        }
+                    }
+
+                    result.append("]}");
                 }
 
-                result.append("]}");
                 break;
             case BOOLEAN:
                 result.append("boolean\" }");
@@ -104,7 +142,7 @@ public class JsonSchemaUtil
             case OBJECT:
                 node = parentNode.get(key);
                 result.append("object\", \"properties\": ");
-                result.append(outputAsString(null, null, node.toString(), JsonNodeType.OBJECT));
+                result.append(outputAsString(null, null, node.toString(), JsonNodeType.OBJECT, useArrayContains));
                 result.append("}");
                 break;
             case STRING:
