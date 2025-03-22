@@ -5,6 +5,7 @@ import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
+import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
 import com.karyasarma.toolkit.doku.util.LiquibaseYamlUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -48,6 +49,8 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu dbeaverCopyAsJsonToTextPrintNullAsEmptyStringSm = new SimpleMenu("Print [NULL] as Empty String", new MenuShortcut(KeyEvent.VK_D, true));
     private final SimpleMenu dbeaverCopyAsJsonToTextPrintNullAsEmptyStringAndSortByColumnNameSm = new SimpleMenu("Print [NULL] as Empty String + Sort by Column Name", new MenuShortcut(KeyEvent.VK_E, true));
     private final SimpleMenu dbeaverCopyAsJsonToTextSortByColumnNameSm = new SimpleMenu("Sort by Column Name", new MenuShortcut(KeyEvent.VK_E));
+
+    private final SimpleMenu createJsonSchemaSm = new SimpleMenu("Create JSON Schema", new MenuShortcut(KeyEvent.VK_H));
 
     private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML", new MenuShortcut(KeyEvent.VK_X));
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML", new MenuShortcut(KeyEvent.VK_X, true));
@@ -110,6 +113,8 @@ public class DokuToolkitMain implements ActionListener
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextPrintNullAsEmptyStringSm);
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextPrintNullAsEmptyStringAndSortByColumnNameSm);
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextSortByColumnNameSm);
+
+        listOfSimpleMenu.add(createJsonSchemaSm);
 
         listOfSimpleMenu.add(separatorSm);
 
@@ -249,6 +254,19 @@ public class DokuToolkitMain implements ActionListener
         else if(dbeaverCopyAsJsonToTextSortByColumnNameSm.getName().equals(actionCommand))
         {
             processCommandDbeaverCopyAsJsonToText(false, true);
+        }
+        else if(createJsonSchemaSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("JSON Data: \n"+jsonData);
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
         }
         else if(prettyXmlSm.getName().equals(actionCommand))
         {
