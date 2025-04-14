@@ -87,6 +87,13 @@ public class LiquibaseYamlUtils
                         lines[idLineNumber] = id;
                         //System.out.println("ID: "+id);
                     }
+                    else if(changesOperation.equals("addPrimaryKey"))
+                    {
+                        String constraintName = getAttributeValue(lines, i, changesOperationLineNumber+1, "constraintName:");
+                        String id = String.format("%s %s_%02d_%s-%s", idPrefix, tag, counter, "addPrimaryKey", constraintName);
+                        lines[idLineNumber] = id;
+                        //System.out.println("ID: "+id);
+                    }
                     else if(changesOperation.equals("modifyDataType"))
                     {
                         String tableName = getAttributeValue(lines, i, changesOperationLineNumber+1, "tableName:");
@@ -106,6 +113,13 @@ public class LiquibaseYamlUtils
                         String tableName = getAttributeValue(lines, i, changesOperationLineNumber+1, "tableName:");
                         String columnName = getAttributeValue(lines, i, changesOperationLineNumber+1, "name:");
                         String id = String.format("%s %s_%02d_%s-%s-%s", idPrefix, tag, counter, "addColumn", tableName, columnName);
+                        lines[idLineNumber] = id;
+                        //System.out.println("ID: "+id);
+                    }
+                    else if(changesOperation.equals("createView"))
+                    {
+                        String viewName = getAttributeValue(lines, i, changesOperationLineNumber+1, "viewName:");
+                        String id = String.format("%s %s_%02d_%s-%s", idPrefix, tag, counter, "createView", viewName);
                         lines[idLineNumber] = id;
                         //System.out.println("ID: "+id);
                     }
