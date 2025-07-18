@@ -1,8 +1,10 @@
 package com.karyasarma.toolkit.doku;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
+import com.karyasarma.toolkit.doku.util.AuSecurityCommonUtils;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
@@ -44,6 +46,7 @@ public class DokuToolkitMain implements ActionListener
 
     private final SimpleMenu prettyJsonSm = new SimpleMenu("Pretty JSON", new MenuShortcut(KeyEvent.VK_J));
     private final SimpleMenu compactJsonSm = new SimpleMenu("Compact JSON", new MenuShortcut(KeyEvent.VK_J, true));
+    private final SimpleMenu orderedJsonSm = new SimpleMenu("Ordered JSON", new MenuShortcut(KeyEvent.VK_O, true));
 
     private final SimpleMenu dbeaverCopyAsJsonToTextParentSm = new SimpleMenu("DBeaver \"Copy as JSON\" to Text", new MenuShortcut(KeyEvent.VK_D));
     private final SimpleMenu dbeaverCopyAsJsonToTextPrintNullAsEmptyStringSm = new SimpleMenu("Print [NULL] as Empty String", new MenuShortcut(KeyEvent.VK_D, true));
@@ -58,6 +61,7 @@ public class DokuToolkitMain implements ActionListener
 
     private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (UAT)", new MenuShortcut(KeyEvent.VK_A));
     private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (UAT)", new MenuShortcut(KeyEvent.VK_A, true));
+    private final SimpleMenu auSecurityCommonDevContentSm = new SimpleMenu("AU Security Common Dev Content", new MenuShortcut(KeyEvent.VK_U, true));
 
     private final SimpleMenu getFileContentSm = new SimpleMenu("Get File Content", new MenuShortcut(KeyEvent.VK_F));
     private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically", new MenuShortcut(KeyEvent.VK_S));
@@ -69,6 +73,10 @@ public class DokuToolkitMain implements ActionListener
     private MenuItem quitMi;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final ObjectMapper objectMapperPrettyAndSortPropertiesAlphabetically = new ObjectMapper()
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
     private String previousClipboardData;
 
@@ -109,6 +117,7 @@ public class DokuToolkitMain implements ActionListener
 
         listOfSimpleMenu.add(prettyJsonSm);
         listOfSimpleMenu.add(compactJsonSm);
+        listOfSimpleMenu.add(orderedJsonSm);
         listOfSimpleMenu.add(dbeaverCopyAsJsonToTextParentSm);
 
         dbeaverCopyAsJsonToTextParentSm.addChild(dbeaverCopyAsJsonToTextPrintNullAsEmptyStringSm);
@@ -134,6 +143,7 @@ public class DokuToolkitMain implements ActionListener
 
         listOfSimpleMenu.add(aesEncryptSm);
         listOfSimpleMenu.add(aesDecryptSm);
+        listOfSimpleMenu.add(auSecurityCommonDevContentSm);
 
         listOfSimpleMenu.add(separatorSm);
 
@@ -235,6 +245,20 @@ public class DokuToolkitMain implements ActionListener
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
                 copyToClipboard(objectMapper.writeValueAsString(temp), jsonData);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(orderedJsonSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("JSON Data: \n"+jsonData);
+                Object temp = objectMapperPrettyAndSortPropertiesAlphabetically.readValue(jsonData, Object.class);
+                copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp), jsonData);
             }
             catch(Exception ex)
             {
@@ -402,6 +426,10 @@ public class DokuToolkitMain implements ActionListener
             {
                 ex.printStackTrace(System.err);
             }
+        }
+        else if(auSecurityCommonDevContentSm.getName().equals(actionCommand))
+        {
+            copyToClipboard(AuSecurityCommonUtils.getAuSecurityCommonDevContent());
         }
         else if(passwordVpnSm.getName().equals(actionCommand))
         {
