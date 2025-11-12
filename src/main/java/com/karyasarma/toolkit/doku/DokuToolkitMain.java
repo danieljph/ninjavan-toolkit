@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.AuSecurityCommonUtils;
+import com.karyasarma.toolkit.doku.util.Base64Utils;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
+import com.karyasarma.toolkit.doku.util.JwtUtils;
 import com.karyasarma.toolkit.doku.util.LiquibaseYamlUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -23,6 +25,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.nio.file.Files;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -59,13 +64,28 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML", new MenuShortcut(KeyEvent.VK_X));
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML", new MenuShortcut(KeyEvent.VK_X, true));
 
-    private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (UAT)", new MenuShortcut(KeyEvent.VK_A));
-    private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (UAT)", new MenuShortcut(KeyEvent.VK_A, true));
+    private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A));
+    private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A, true));
     private final SimpleMenu auSecurityCommonDevContentSm = new SimpleMenu("AU Security Common Dev Content", new MenuShortcut(KeyEvent.VK_U, true));
 
     private final SimpleMenu getFileContentSm = new SimpleMenu("Get File Content", new MenuShortcut(KeyEvent.VK_F));
     private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically", new MenuShortcut(KeyEvent.VK_S));
     private final SimpleMenu generateLiquibaseYamlIdSm = new SimpleMenu("Generate Liquibase YAML ID", new MenuShortcut(KeyEvent.VK_Y));
+
+    private final SimpleMenu miscParentSm = new SimpleMenu("Misc");
+
+    private final SimpleMenu jwtDecodeSm = new SimpleMenu("JWT Decode", new MenuShortcut(KeyEvent.VK_W));
+    private final SimpleMenu jwtEncodeSm = new SimpleMenu("JWT Encode", new MenuShortcut(KeyEvent.VK_W, true));
+
+    private final SimpleMenu base64EncodeSm = new SimpleMenu("Base64 Encode", new MenuShortcut(KeyEvent.VK_B));
+    private final SimpleMenu base64EncodeUrlSafeSm = new SimpleMenu("Base64 Encode URL Safe");
+    private final SimpleMenu base64DecodeSm = new SimpleMenu("Base64 Decode", new MenuShortcut(KeyEvent.VK_B, true));
+
+    private final SimpleMenu epochSecondsSm = new SimpleMenu("Epoch Seconds");
+    private final SimpleMenu epochMillisecondsSm = new SimpleMenu("Epoch Milliseconds");
+    private final SimpleMenu nowAtUtcSm = new SimpleMenu("Now - ISO-8601 UTC");
+    private final SimpleMenu nowAtUtcPlus7Sm = new SimpleMenu("Now - ISO-8601 UTC+7");
+
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
 
     private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN", new MenuShortcut(KeyEvent.VK_V));
@@ -101,13 +121,13 @@ public class DokuToolkitMain implements ActionListener
         getPreviousClipboardDataMi.setShortcut(new MenuShortcut(KeyEvent.VK_C));
         popupMenu.add(getPreviousClipboardDataMi);
 
+        popupMenu.addSeparator();
+
         clearPreviousClipboardDataMi = new MenuItem("Clear Previous Clipboard Data");
         clearPreviousClipboardDataMi.addActionListener(this);
         clearPreviousClipboardDataMi.setEnabled(false);
         clearPreviousClipboardDataMi.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
         getPreviousClipboardDataMi.add(clearPreviousClipboardDataMi);
-
-        popupMenu.addSeparator();
 
         listOfSimpleMenu.add(parseLogsSimplifiedSm);
         listOfSimpleMenu.add(parseLogsSm);
@@ -137,7 +157,6 @@ public class DokuToolkitMain implements ActionListener
         listOfSimpleMenu.add(getFileContentSm);
         listOfSimpleMenu.add(sortAlphabeticallySm);
         listOfSimpleMenu.add(generateLiquibaseYamlIdSm);
-        listOfSimpleMenu.add(toOldCurlSm);
 
         listOfSimpleMenu.add(separatorSm);
 
@@ -150,9 +169,33 @@ public class DokuToolkitMain implements ActionListener
         listOfSimpleMenu.add(passwordVpnSm);
         listOfSimpleMenu.add(passwordLdapSm);
 
+        listOfSimpleMenu.add(0, miscParentSm);
+
+        listOfSimpleMenu.add(1, separatorSm);
+
+        miscParentSm.addChild(jwtDecodeSm);
+        miscParentSm.addChild(jwtEncodeSm);
+
+        miscParentSm.addChild(separatorSm);
+
+        miscParentSm.addChild(base64EncodeSm);
+        miscParentSm.addChild(base64EncodeUrlSafeSm);
+        miscParentSm.addChild(base64DecodeSm);
+
+        miscParentSm.addChild(separatorSm);
+
+        miscParentSm.addChild(epochSecondsSm);
+        miscParentSm.addChild(epochMillisecondsSm);
+        miscParentSm.addChild(nowAtUtcSm);
+        miscParentSm.addChild(nowAtUtcPlus7Sm);
+
+        miscParentSm.addChild(separatorSm);
+
+        miscParentSm.addChild(toOldCurlSm);
+
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
-            if(simpleMenu==separatorSm)
+            if(simpleMenu == separatorSm)
             {
                 popupMenu.addSeparator();
             }
@@ -178,11 +221,18 @@ public class DokuToolkitMain implements ActionListener
 
                     for(SimpleMenu simpleMenuChild : simpleMenuChildren)
                     {
-                        MenuItem menuItem = new MenuItem(simpleMenuChild.getName());
-                        menuItem.setActionCommand(simpleMenuChild.getName());
-                        menuItem.addActionListener(this);
-                        menuItem.setShortcut(simpleMenuChild.getMenuShortcut());
-                        menu.add(menuItem);
+                        if(simpleMenuChild == separatorSm)
+                        {
+                            menu.addSeparator();
+                        }
+                        else
+                        {
+                            MenuItem menuItem = new MenuItem(simpleMenuChild.getName());
+                            menuItem.setActionCommand(simpleMenuChild.getName());
+                            menuItem.addActionListener(this);
+                            menuItem.setShortcut(simpleMenuChild.getMenuShortcut());
+                            menu.add(menuItem);
+                        }
                     }
                 }
             }
@@ -287,7 +337,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false));
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false), jsonData);
             }
             catch(Exception ex)
             {
@@ -300,7 +350,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true));
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true), jsonData);
             }
             catch(Exception ex)
             {
@@ -379,20 +429,6 @@ public class DokuToolkitMain implements ActionListener
                 copyToClipboard("ERROR: "+ex.getMessage());
             }
         }
-        else if(toOldCurlSm.getName().equals(actionCommand))
-        {
-            try
-            {
-                String curlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
-                System.out.println("cURL Data: \n"+curlData);
-                String curlDataOld = curlData.replaceAll("--data-raw", "--data");
-                copyToClipboard(curlDataOld, curlData);
-            }
-            catch(Exception ex)
-            {
-                ex.printStackTrace(System.err);
-            }
-        }
         else if(aesEncryptSm.getName().equals(actionCommand))
         {
             try
@@ -459,14 +495,109 @@ public class DokuToolkitMain implements ActionListener
                 copyToClipboard(passwordVpn);
             }
         }
+        else if(jwtDecodeSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n" + data);
+                copyToClipboard(JwtUtils.decode(data), data);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(jwtEncodeSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n" + data);
+                copyToClipboard(JwtUtils.encode(data), data);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(base64EncodeSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n" + data);
+                copyToClipboard(Base64Utils.encode(data), data);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(base64EncodeUrlSafeSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n" + data);
+                copyToClipboard(Base64Utils.encodeUrlSafe(data), data);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(base64DecodeSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("Data: \n" + data);
+                copyToClipboard(Base64Utils.decode(data), data);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(epochSecondsSm.getName().equals(actionCommand))
+        {
+            copyToClipboard(String.valueOf(System.currentTimeMillis()/1000));
+        }
+        else if(epochMillisecondsSm.getName().equals(actionCommand))
+        {
+            copyToClipboard(String.valueOf(System.currentTimeMillis()));
+        }
+        else if(nowAtUtcSm.getName().equals(actionCommand))
+        {
+            copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        }
+        else if(nowAtUtcPlus7Sm.getName().equals(actionCommand))
+        {
+            copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        }
+        else if(toOldCurlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String curlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                System.out.println("cURL Data: \n"+curlData);
+                String curlDataOld = curlData.replaceAll("--data-raw", "--data");
+                copyToClipboard(curlDataOld, curlData);
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
 
         Object source = evt.getSource();
 
-        if(source==getPreviousClipboardDataMi)
+        if(source == getPreviousClipboardDataMi)
         {
             copyToClipboard(previousClipboardData);
         }
-        else if(source==clearPreviousClipboardDataMi)
+        else if(source == clearPreviousClipboardDataMi)
         {
             previousClipboardData = null;
             getPreviousClipboardDataMi.setEnabled(false);

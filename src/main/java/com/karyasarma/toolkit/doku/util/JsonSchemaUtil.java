@@ -16,7 +16,7 @@ import java.util.TimeZone;
 
 public class JsonSchemaUtil
 {
-    public static ObjectMapper objectMapper = new ObjectMapper()
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
         .registerModule(new JavaTimeModule())
         .setTimeZone(TimeZone.getTimeZone(ZoneId.of("Asia/Jakarta")))
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -29,13 +29,13 @@ public class JsonSchemaUtil
     public static String generateJsonSchema(String json, boolean useArrayContains) throws IOException
     {
         String jsonSchema = outputAsString("${tcId}", "${tcDesc}", json, null, useArrayContains);
-        Object temp = objectMapper.readValue(jsonSchema, Object.class);
-        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp);
+        Object temp = OBJECT_MAPPER.readValue(jsonSchema, Object.class);
+        return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(temp);
     }
 
     private static String outputAsString(String title, String description, String json, JsonNodeType type, boolean useArrayContains) throws IOException
     {
-        JsonNode jsonNode = objectMapper.readTree(json);
+        JsonNode jsonNode = OBJECT_MAPPER.readTree(json);
         StringBuilder output = new StringBuilder();
         output.append("{");
 
@@ -106,7 +106,7 @@ public class JsonSchemaUtil
                     {
 
                         String nodeAsString = node.get(i).toString();
-                        JsonNode jsonNode = objectMapper.readTree(nodeAsString);
+                        JsonNode jsonNode = OBJECT_MAPPER.readTree(nodeAsString);
                         List<String> listOfFieldNames = new ArrayList<>();
 
                         for(Iterator<String> iterator = jsonNode.fieldNames(); iterator.hasNext();)
