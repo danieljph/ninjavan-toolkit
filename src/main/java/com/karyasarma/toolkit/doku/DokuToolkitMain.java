@@ -6,6 +6,7 @@ import com.karyasarma.toolkit.doku.model.Log;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.AuSecurityCommonUtils;
 import com.karyasarma.toolkit.doku.util.Base64Utils;
+import com.karyasarma.toolkit.doku.util.CheatNoBugsUtils;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
@@ -87,6 +88,8 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu nowAtUtcPlus7Sm = new SimpleMenu("Now - ISO-8601 UTC+7");
 
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
+
+    private final SimpleMenu cheatNoBugsSm = new SimpleMenu("Cheat No Bugs");
 
     private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN", new MenuShortcut(KeyEvent.VK_V));
     private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP", new MenuShortcut(KeyEvent.VK_L));
@@ -192,6 +195,10 @@ public class DokuToolkitMain implements ActionListener
         miscParentSm.addChild(separatorSm);
 
         miscParentSm.addChild(toOldCurlSm);
+
+        miscParentSm.addChild(separatorSm);
+
+        miscParentSm.addChild(cheatNoBugsSm);
 
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
@@ -589,6 +596,10 @@ public class DokuToolkitMain implements ActionListener
             {
                 ex.printStackTrace(System.err);
             }
+        }
+        else if(cheatNoBugsSm.getName().equals(actionCommand))
+        {
+            copyToClipboard(CheatNoBugsUtils.getCheatNoBugs());
         }
 
         Object source = evt.getSource();
