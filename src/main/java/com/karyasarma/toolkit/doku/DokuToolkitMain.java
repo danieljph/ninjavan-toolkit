@@ -3,6 +3,7 @@ package com.karyasarma.toolkit.doku;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.karyasarma.toolkit.doku.model.Log;
+import com.karyasarma.toolkit.doku.service.ClipboardListener;
 import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.AuSecurityCommonUtils;
 import com.karyasarma.toolkit.doku.util.Base64Utils;
@@ -43,8 +44,10 @@ public class DokuToolkitMain implements ActionListener
     private final java.util.List<SimpleMenu> listOfSimpleMenu = new ArrayList<>();
     private final SimpleMenu separatorSm = new SimpleMenu("Separator");
 
-    private Menu getPreviousClipboardDataMi;
-    private MenuItem clearPreviousClipboardDataMi;
+    private ClipboardListener clipboardListener;
+
+    private Menu clipboardHistoryMenu;
+    private MenuItem clearClipboardHistoryMi;
 
     private final SimpleMenu parseLogsSimplifiedSm = new SimpleMenu("Parse Logs (Simplified)", new MenuShortcut(KeyEvent.VK_P));
     private final SimpleMenu parseLogsSm = new SimpleMenu("Parse Logs", new MenuShortcut(KeyEvent.VK_P, true));
@@ -101,8 +104,6 @@ public class DokuToolkitMain implements ActionListener
         .enable(SerializationFeature.INDENT_OUTPUT)
         .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
-    private String previousClipboardData;
-
     public DokuToolkitMain()
     {
     }
@@ -118,19 +119,15 @@ public class DokuToolkitMain implements ActionListener
 
         PopupMenu popupMenu = new PopupMenu();
 
-        getPreviousClipboardDataMi = new Menu("Get Previous Clipboard Data");
-        getPreviousClipboardDataMi.addActionListener(this);
-        getPreviousClipboardDataMi.setEnabled(false);
-        getPreviousClipboardDataMi.setShortcut(new MenuShortcut(KeyEvent.VK_C));
-        popupMenu.add(getPreviousClipboardDataMi);
+        clipboardHistoryMenu = new Menu("Clipboard History On");
+        clipboardHistoryMenu.addActionListener(this);
+        popupMenu.add(clipboardHistoryMenu);
+
+        clearClipboardHistoryMi = new MenuItem("Clear History");
+        clearClipboardHistoryMi.addActionListener(this);
+        clearClipboardHistoryMi.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
 
         popupMenu.addSeparator();
-
-        clearPreviousClipboardDataMi = new MenuItem("Clear Previous Clipboard Data");
-        clearPreviousClipboardDataMi.addActionListener(this);
-        clearPreviousClipboardDataMi.setEnabled(false);
-        clearPreviousClipboardDataMi.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
-        getPreviousClipboardDataMi.add(clearPreviousClipboardDataMi);
 
         listOfSimpleMenu.add(parseLogsSimplifiedSm);
         listOfSimpleMenu.add(parseLogsSm);
@@ -260,9 +257,12 @@ public class DokuToolkitMain implements ActionListener
 
         SystemTray systemTray = SystemTray.getSystemTray();
         systemTray.add(trayIcon);
+
+        clipboardListener = new ClipboardListener(clipboardHistoryMenu, clearClipboardHistoryMi);
+        clipboardListener.startListening();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "DuplicatedCode"})
     @Override
     public void actionPerformed(ActionEvent evt)
     {
@@ -287,7 +287,7 @@ public class DokuToolkitMain implements ActionListener
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp), jsonData);
+                copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -301,7 +301,7 @@ public class DokuToolkitMain implements ActionListener
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapper.writeValueAsString(temp), jsonData);
+                copyToClipboard(objectMapper.writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -315,7 +315,7 @@ public class DokuToolkitMain implements ActionListener
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapperPrettyAndSortPropertiesAlphabetically.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp), jsonData);
+                copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -344,7 +344,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false), jsonData);
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false));
             }
             catch(Exception ex)
             {
@@ -357,7 +357,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true), jsonData);
+                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true));
             }
             catch(Exception ex)
             {
@@ -370,7 +370,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("XML Data: \n"+xmlData);
-                copyToClipboard(XmlUtils.prettyPrint(xmlData, 4, false), xmlData);
+                copyToClipboard(XmlUtils.prettyPrint(xmlData, 4, false));
             }
             catch(Exception ex)
             {
@@ -383,7 +383,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("XML Data: \n"+xmlData);
-                copyToClipboard(XmlUtils.compactPrint(xmlData), xmlData);
+                copyToClipboard(XmlUtils.compactPrint(xmlData));
             }
             catch(Exception ex)
             {
@@ -398,7 +398,7 @@ public class DokuToolkitMain implements ActionListener
 
                 if(ObjectUtils.isNotEmpty(listOfFile))
                 {
-                    File file = listOfFile.get(0); // We only get the first File from list.
+                    File file = listOfFile.get(0); // We only get the first File from a list.
                     String fileContent = new String(Files.readAllBytes(file.toPath()));
                     copyToClipboard(fileContent);
                 }
@@ -416,7 +416,7 @@ public class DokuToolkitMain implements ActionListener
                 String unsorted = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Unsorted Data: \n"+unsorted);
                 String sorted = Arrays.stream(unsorted.split("\n")).map(String::trim).sorted().collect(Collectors.joining("\n"));
-                copyToClipboard(sorted, unsorted);
+                copyToClipboard(sorted);
             }
             catch(Exception ex)
             {
@@ -428,7 +428,7 @@ public class DokuToolkitMain implements ActionListener
             try
             {
                 String liquibaseYaml = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
-                copyToClipboard(LiquibaseYamlUtils.generateLiquibaseChangesetId(liquibaseYaml), liquibaseYaml);
+                copyToClipboard(LiquibaseYamlUtils.generateLiquibaseChangesetId(liquibaseYaml));
             }
             catch(Exception ex)
             {
@@ -445,7 +445,7 @@ public class DokuToolkitMain implements ActionListener
 
                 if(StringUtils.isNotBlank(plainPassword))
                 {
-                    copyToClipboard(EncryptionUtils.encrypt(plainPassword), plainPassword);
+                    copyToClipboard(EncryptionUtils.encrypt(plainPassword));
                 }
             }
             catch(Exception ex)
@@ -462,7 +462,7 @@ public class DokuToolkitMain implements ActionListener
 
                 if(StringUtils.isNotBlank(cipherPassword))
                 {
-                    copyToClipboard(EncryptionUtils.decrypt(cipherPassword), cipherPassword);
+                    copyToClipboard(EncryptionUtils.decrypt(cipherPassword));
                 }
             }
             catch(Exception ex)
@@ -508,7 +508,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n" + data);
-                copyToClipboard(JwtUtils.decode(data), data);
+                copyToClipboard(JwtUtils.decode(data));
             }
             catch(Exception ex)
             {
@@ -521,7 +521,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n" + data);
-                copyToClipboard(JwtUtils.encode(data), data);
+                copyToClipboard(JwtUtils.encode(data));
             }
             catch(Exception ex)
             {
@@ -534,7 +534,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.encode(data), data);
+                copyToClipboard(Base64Utils.encode(data));
             }
             catch(Exception ex)
             {
@@ -547,7 +547,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.encodeUrlSafe(data), data);
+                copyToClipboard(Base64Utils.encodeUrlSafe(data));
             }
             catch(Exception ex)
             {
@@ -560,7 +560,7 @@ public class DokuToolkitMain implements ActionListener
             {
                 String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.decode(data), data);
+                copyToClipboard(Base64Utils.decode(data));
             }
             catch(Exception ex)
             {
@@ -590,7 +590,7 @@ public class DokuToolkitMain implements ActionListener
                 String curlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
                 System.out.println("cURL Data: \n"+curlData);
                 String curlDataOld = curlData.replaceAll("--data-raw", "--data");
-                copyToClipboard(curlDataOld, curlData);
+                copyToClipboard(curlDataOld);
             }
             catch(Exception ex)
             {
@@ -604,15 +604,13 @@ public class DokuToolkitMain implements ActionListener
 
         Object source = evt.getSource();
 
-        if(source == getPreviousClipboardDataMi)
+        if(source == clipboardHistoryMenu)
         {
-            copyToClipboard(previousClipboardData);
+            clipboardListener.onMenuClicked();
         }
-        else if(source == clearPreviousClipboardDataMi)
+        else if(source == clearClipboardHistoryMi)
         {
-            previousClipboardData = null;
-            getPreviousClipboardDataMi.setEnabled(false);
-            clearPreviousClipboardDataMi.setEnabled(false);
+            clipboardListener.clearClipboardHistory();
         }
         else if(source==quitMi)
         {
@@ -627,7 +625,7 @@ public class DokuToolkitMain implements ActionListener
             String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
             System.out.println("Data: \n"+logsData);
             String result = Log.parse(logsData, removeFailedLine, simplified);
-            copyToClipboard(result, logsData);
+            copyToClipboard(result);
         }
         catch(Exception ex)
         {
@@ -642,7 +640,7 @@ public class DokuToolkitMain implements ActionListener
             String dbeaverCopyAsJsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
             System.out.println("DBeaver 'Copy as JSON' Data: \n"+dbeaverCopyAsJsonData);
             String result = DbeaverUtils.fromCopyAsJsonToText(dbeaverCopyAsJsonData, printNullAsEmptyString, sortedByColumnName);
-            copyToClipboard(result, dbeaverCopyAsJsonData);
+            copyToClipboard(result);
         }
         catch(Exception ex)
         {
@@ -654,14 +652,6 @@ public class DokuToolkitMain implements ActionListener
     {
         Clipboard clipboard = getSystemClipboard();
         clipboard.setContents(new StringSelection(data), null);
-    }
-
-    private void copyToClipboard(String data, String previousClipboardData)
-    {
-        copyToClipboard(data);
-        this.previousClipboardData = previousClipboardData;
-        getPreviousClipboardDataMi.setEnabled(true);
-        clearPreviousClipboardDataMi.setEnabled(true);
     }
 
     public Clipboard getSystemClipboard()
@@ -686,7 +676,7 @@ public class DokuToolkitMain implements ActionListener
     {
         if(System.getProperty("os.name").toLowerCase().contains("mac"))
         {
-            System.setProperty("apple.awt.UIElement", "true"); // Make no Java Icon in Mac-OS Doc
+            System.setProperty("apple.awt.UIElement", "true"); // Make no Java Icon in macOS Doc
         }
 
         new DokuToolkitMain().start();
