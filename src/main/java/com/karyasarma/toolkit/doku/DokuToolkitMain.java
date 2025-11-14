@@ -8,6 +8,8 @@ import com.karyasarma.toolkit.doku.ui.SimpleMenu;
 import com.karyasarma.toolkit.doku.util.AuSecurityCommonUtils;
 import com.karyasarma.toolkit.doku.util.Base64Utils;
 import com.karyasarma.toolkit.doku.util.CheatNoBugsUtils;
+import com.karyasarma.toolkit.doku.util.ClipboardUtils;
+import com.karyasarma.toolkit.doku.util.ConfluenceUtils;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.EncryptionUtils;
 import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
@@ -19,9 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -68,15 +68,21 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu prettyXmlSm = new SimpleMenu("Pretty XML", new MenuShortcut(KeyEvent.VK_X));
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML", new MenuShortcut(KeyEvent.VK_X, true));
 
-    private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A));
-    private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A, true));
-    private final SimpleMenu auSecurityCommonDevContentSm = new SimpleMenu("AU Security Common Dev Content", new MenuShortcut(KeyEvent.VK_U, true));
-
     private final SimpleMenu getFileContentSm = new SimpleMenu("Get File Content", new MenuShortcut(KeyEvent.VK_F));
     private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically", new MenuShortcut(KeyEvent.VK_S));
     private final SimpleMenu generateLiquibaseYamlIdSm = new SimpleMenu("Generate Liquibase YAML ID", new MenuShortcut(KeyEvent.VK_Y));
 
+    private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A));
+    private final SimpleMenu aesDecryptSm = new SimpleMenu("AES Decrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A, true));
+    private final SimpleMenu auSecurityCommonDevContentSm = new SimpleMenu("AU Security Common Dev Content", new MenuShortcut(KeyEvent.VK_U, true));
+
+    private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN", new MenuShortcut(KeyEvent.VK_V));
+    private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP", new MenuShortcut(KeyEvent.VK_L));
+
     private final SimpleMenu miscParentSm = new SimpleMenu("Misc");
+
+    private final SimpleMenu confluenceToCodeBlockPlaintextSm = new SimpleMenu("Confluence - To Code Block - Plaintext", new MenuShortcut(KeyEvent.VK_T));
+    private final SimpleMenu confluenceToCodeBlockSqlSm = new SimpleMenu("Confluence - To Code Block - SQL", new MenuShortcut(KeyEvent.VK_T));
 
     private final SimpleMenu jwtDecodeSm = new SimpleMenu("JWT Decode", new MenuShortcut(KeyEvent.VK_W));
     private final SimpleMenu jwtEncodeSm = new SimpleMenu("JWT Encode", new MenuShortcut(KeyEvent.VK_W, true));
@@ -94,8 +100,6 @@ public class DokuToolkitMain implements ActionListener
 
     private final SimpleMenu cheatNoBugsSm = new SimpleMenu("Cheat No Bugs");
 
-    private final SimpleMenu passwordVpnSm = new SimpleMenu("Password VPN", new MenuShortcut(KeyEvent.VK_V));
-    private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP", new MenuShortcut(KeyEvent.VK_L));
     private MenuItem quitMi;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -172,6 +176,11 @@ public class DokuToolkitMain implements ActionListener
         listOfSimpleMenu.add(0, miscParentSm);
 
         listOfSimpleMenu.add(1, separatorSm);
+
+        miscParentSm.addChild(confluenceToCodeBlockPlaintextSm);
+        miscParentSm.addChild(confluenceToCodeBlockSqlSm);
+
+        miscParentSm.addChild(separatorSm);
 
         miscParentSm.addChild(jwtDecodeSm);
         miscParentSm.addChild(jwtEncodeSm);
@@ -262,7 +271,7 @@ public class DokuToolkitMain implements ActionListener
         clipboardListener.startListening();
     }
 
-    @SuppressWarnings({"unchecked", "DuplicatedCode"})
+    @SuppressWarnings("DuplicatedCode")
     @Override
     public void actionPerformed(ActionEvent evt)
     {
@@ -284,10 +293,10 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String jsonData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
+                ClipboardUtils.copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -298,10 +307,10 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String jsonData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapper.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapper.writeValueAsString(temp));
+                ClipboardUtils.copyToClipboard(objectMapper.writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -312,10 +321,10 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String jsonData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("JSON Data: \n"+jsonData);
                 Object temp = objectMapperPrettyAndSortPropertiesAlphabetically.readValue(jsonData, Object.class);
-                copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp));
+                ClipboardUtils.copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp));
             }
             catch(Exception ex)
             {
@@ -342,9 +351,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String jsonData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false));
+                ClipboardUtils.copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, false));
             }
             catch(Exception ex)
             {
@@ -355,9 +364,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String jsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String jsonData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("JSON Data: \n"+jsonData);
-                copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true));
+                ClipboardUtils.copyToClipboard(JsonSchemaUtil.generateJsonSchema(jsonData, true));
             }
             catch(Exception ex)
             {
@@ -368,9 +377,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String xmlData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("XML Data: \n"+xmlData);
-                copyToClipboard(XmlUtils.prettyPrint(xmlData, 4, false));
+                ClipboardUtils.copyToClipboard(XmlUtils.prettyPrint(xmlData, 4, false));
             }
             catch(Exception ex)
             {
@@ -381,9 +390,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String xmlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String xmlData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("XML Data: \n"+xmlData);
-                copyToClipboard(XmlUtils.compactPrint(xmlData));
+                ClipboardUtils.copyToClipboard(XmlUtils.compactPrint(xmlData));
             }
             catch(Exception ex)
             {
@@ -394,18 +403,18 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                java.util.List<File> listOfFile = (java.util.List<File>) getSystemClipboard().getData(DataFlavor.javaFileListFlavor);
+                java.util.List<File> listOfFile = ClipboardUtils.getData(DataFlavor.javaFileListFlavor);
 
                 if(ObjectUtils.isNotEmpty(listOfFile))
                 {
                     File file = listOfFile.get(0); // We only get the first File from a list.
                     String fileContent = new String(Files.readAllBytes(file.toPath()));
-                    copyToClipboard(fileContent);
+                    ClipboardUtils.copyToClipboard(fileContent);
                 }
             }
             catch(Exception ex)
             {
-                copyToClipboard(ex.getClass()+": "+ex.getMessage());
+                ClipboardUtils.copyToClipboard(ex.getClass()+": "+ex.getMessage());
                 ex.printStackTrace(System.err);
             }
         }
@@ -413,10 +422,10 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String unsorted = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String unsorted = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Unsorted Data: \n"+unsorted);
                 String sorted = Arrays.stream(unsorted.split("\n")).map(String::trim).sorted().collect(Collectors.joining("\n"));
-                copyToClipboard(sorted);
+                ClipboardUtils.copyToClipboard(sorted);
             }
             catch(Exception ex)
             {
@@ -427,25 +436,25 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String liquibaseYaml = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
-                copyToClipboard(LiquibaseYamlUtils.generateLiquibaseChangesetId(liquibaseYaml));
+                String liquibaseYaml = ClipboardUtils.getDataFromStringFlavor();
+                ClipboardUtils.copyToClipboard(LiquibaseYamlUtils.generateLiquibaseChangesetId(liquibaseYaml));
             }
             catch(Exception ex)
             {
                 ex.printStackTrace(System.err);
-                copyToClipboard("ERROR: "+ex.getMessage());
+                ClipboardUtils.copyToClipboard("ERROR: "+ex.getMessage());
             }
         }
         else if(aesEncryptSm.getName().equals(actionCommand))
         {
             try
             {
-                String plainPassword = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String plainPassword = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("plainPassword Data: "+plainPassword);
 
                 if(StringUtils.isNotBlank(plainPassword))
                 {
-                    copyToClipboard(EncryptionUtils.encrypt(plainPassword));
+                    ClipboardUtils.copyToClipboard(EncryptionUtils.encrypt(plainPassword));
                 }
             }
             catch(Exception ex)
@@ -457,12 +466,12 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String cipherPassword = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String cipherPassword = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("cipherPassword Data: "+cipherPassword);
 
                 if(StringUtils.isNotBlank(cipherPassword))
                 {
-                    copyToClipboard(EncryptionUtils.decrypt(cipherPassword));
+                    ClipboardUtils.copyToClipboard(EncryptionUtils.decrypt(cipherPassword));
                 }
             }
             catch(Exception ex)
@@ -472,7 +481,7 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(auSecurityCommonDevContentSm.getName().equals(actionCommand))
         {
-            copyToClipboard(AuSecurityCommonUtils.getAuSecurityCommonDevContent());
+            ClipboardUtils.copyToClipboard(AuSecurityCommonUtils.getAuSecurityCommonDevContent());
         }
         else if(passwordVpnSm.getName().equals(actionCommand))
         {
@@ -485,7 +494,7 @@ public class DokuToolkitMain implements ActionListener
             }
             else
             {
-                copyToClipboard(passwordVpn);
+                ClipboardUtils.copyToClipboard(passwordVpn);
             }
         }
         else if(passwordLdapSm.getName().equals(actionCommand))
@@ -499,16 +508,42 @@ public class DokuToolkitMain implements ActionListener
             }
             else
             {
-                copyToClipboard(passwordVpn);
+                ClipboardUtils.copyToClipboard(passwordVpn);
+            }
+        }
+        else if(confluenceToCodeBlockPlaintextSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = ClipboardUtils.getDataFromStringFlavor();
+                System.out.println("Data: \n" + data);
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.toCodeBlockPlainText(data));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(confluenceToCodeBlockSqlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                String data = ClipboardUtils.getDataFromStringFlavor();
+                System.out.println("Data: \n" + data);
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.toCodeBlockSql(data));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
             }
         }
         else if(jwtDecodeSm.getName().equals(actionCommand))
         {
             try
             {
-                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
-                copyToClipboard(JwtUtils.decode(data));
+                ClipboardUtils.copyToClipboard(JwtUtils.decode(data));
             }
             catch(Exception ex)
             {
@@ -519,9 +554,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
-                copyToClipboard(JwtUtils.encode(data));
+                ClipboardUtils.copyToClipboard(JwtUtils.encode(data));
             }
             catch(Exception ex)
             {
@@ -532,9 +567,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.encode(data));
+                ClipboardUtils.copyToClipboard(Base64Utils.encode(data));
             }
             catch(Exception ex)
             {
@@ -545,9 +580,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.encodeUrlSafe(data));
+                ClipboardUtils.copyToClipboard(Base64Utils.encodeUrlSafe(data));
             }
             catch(Exception ex)
             {
@@ -558,9 +593,9 @@ public class DokuToolkitMain implements ActionListener
         {
             try
             {
-                String data = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
-                copyToClipboard(Base64Utils.decode(data));
+                ClipboardUtils.copyToClipboard(Base64Utils.decode(data));
             }
             catch(Exception ex)
             {
@@ -569,28 +604,28 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(epochSecondsSm.getName().equals(actionCommand))
         {
-            copyToClipboard(String.valueOf(System.currentTimeMillis()/1000));
+            ClipboardUtils.copyToClipboard(String.valueOf(System.currentTimeMillis()/1000));
         }
         else if(epochMillisecondsSm.getName().equals(actionCommand))
         {
-            copyToClipboard(String.valueOf(System.currentTimeMillis()));
+            ClipboardUtils.copyToClipboard(String.valueOf(System.currentTimeMillis()));
         }
         else if(nowAtUtcSm.getName().equals(actionCommand))
         {
-            copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            ClipboardUtils.copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         }
         else if(nowAtUtcPlus7Sm.getName().equals(actionCommand))
         {
-            copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            ClipboardUtils.copyToClipboard(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         }
         else if(toOldCurlSm.getName().equals(actionCommand))
         {
             try
             {
-                String curlData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+                String curlData = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("cURL Data: \n"+curlData);
                 String curlDataOld = curlData.replaceAll("--data-raw", "--data");
-                copyToClipboard(curlDataOld);
+                ClipboardUtils.copyToClipboard(curlDataOld);
             }
             catch(Exception ex)
             {
@@ -599,7 +634,7 @@ public class DokuToolkitMain implements ActionListener
         }
         else if(cheatNoBugsSm.getName().equals(actionCommand))
         {
-            copyToClipboard(CheatNoBugsUtils.getCheatNoBugs());
+            ClipboardUtils.copyToClipboard(CheatNoBugsUtils.getCheatNoBugs());
         }
 
         Object source = evt.getSource();
@@ -622,10 +657,10 @@ public class DokuToolkitMain implements ActionListener
     {
         try
         {
-            String logsData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+            String logsData = ClipboardUtils.getDataFromStringFlavor();
             System.out.println("Data: \n"+logsData);
             String result = Log.parse(logsData, removeFailedLine, simplified);
-            copyToClipboard(result);
+            ClipboardUtils.copyToClipboard(result);
         }
         catch(Exception ex)
         {
@@ -637,26 +672,15 @@ public class DokuToolkitMain implements ActionListener
     {
         try
         {
-            String dbeaverCopyAsJsonData = (String) getSystemClipboard().getData(DataFlavor.stringFlavor);
+            String dbeaverCopyAsJsonData = ClipboardUtils.getDataFromStringFlavor();
             System.out.println("DBeaver 'Copy as JSON' Data: \n"+dbeaverCopyAsJsonData);
             String result = DbeaverUtils.fromCopyAsJsonToText(dbeaverCopyAsJsonData, printNullAsEmptyString, sortedByColumnName);
-            copyToClipboard(result);
+            ClipboardUtils.copyToClipboard(result);
         }
         catch(Exception ex)
         {
             ex.printStackTrace(System.err);
         }
-    }
-
-    private void copyToClipboard(String data)
-    {
-        Clipboard clipboard = getSystemClipboard();
-        clipboard.setContents(new StringSelection(data), null);
-    }
-
-    public Clipboard getSystemClipboard()
-    {
-        return Toolkit.getDefaultToolkit().getSystemClipboard();
     }
 
     public void start()

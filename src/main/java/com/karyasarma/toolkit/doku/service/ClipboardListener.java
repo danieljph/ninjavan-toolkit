@@ -1,13 +1,14 @@
 package com.karyasarma.toolkit.doku.service;
 
+import com.karyasarma.toolkit.doku.model.ClipboardData;
 import com.karyasarma.toolkit.doku.model.ClipboardHistoryData;
+import com.karyasarma.toolkit.doku.util.ClipboardUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -83,16 +84,23 @@ public class ClipboardListener implements Runnable
             {
                 try
                 {
-                    String data = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+                    Transferable transferable = ClipboardUtils.getContents(null);
+                    String content = (String) transferable.getTransferData(DataFlavor.stringFlavor);
 
-                    if(StringUtils.isBlank(data) || data.length() > 100_000)
+                    if(StringUtils.isBlank(content) || content.length() > 100_000)
                     {
                         continue;
                     }
 
-                    if(isListening.get() && clipboardHistoryData.isEmpty() || !clipboardHistoryData.peek().equals(data))
+                    String contentHtml = transferable.isDataFlavorSupported(DataFlavor.allHtmlFlavor)
+                        ? (String) transferable.getTransferData(DataFlavor.allHtmlFlavor)
+                        : null;
+
+                    ClipboardData currentClipboardData = new ClipboardData(content, contentHtml);
+
+                    if(isListening.get() && clipboardHistoryData.isClipboardDataChanged(currentClipboardData))
                     {
-                        clipboardHistoryData.push(data);
+                        clipboardHistoryData.push(currentClipboardData);
                         updateMenu(false);
                     }
 
@@ -115,7 +123,7 @@ public class ClipboardListener implements Runnable
 
     public void clearClipboardHistory()
     {
-        clearClipboard();
+        ClipboardUtils.clearClipboard();
         clipboardHistoryData.clear();
         updateMenu(true);
     }
@@ -131,7 +139,7 @@ public class ClipboardListener implements Runnable
                 int index = 0;
                 int keyEvent = KeyEvent.VK_1;
 
-                for(String clipboardData : clipboardHistoryData)
+                for(ClipboardData clipboardData : clipboardHistoryData)
                 {
                     MenuShortcut menuShortcut = null;
 
@@ -140,7 +148,9 @@ public class ClipboardListener implements Runnable
                         menuShortcut = new MenuShortcut(keyEvent++);
                     }
 
-                    MenuItem menuItem = new MenuItem(clipboardData);
+                    String menuItemLabelPrefix = clipboardData.isHtmlFlavor() ? "⛳ " : "";
+
+                    MenuItem menuItem = new MenuItem(menuItemLabelPrefix + clipboardData.getContent());
                     menuItem.addActionListener(it -> copyToClipboard(clipboardData));
                     menuItem.setShortcut(menuShortcut);
                     clipboardHistoryMenu.add(menuItem);
@@ -157,20 +167,15 @@ public class ClipboardListener implements Runnable
         });
     }
 
-    private void copyToClipboard(String data)
+    private void copyToClipboard(ClipboardData clipboardData)
     {
-        Clipboard clipboard = getSystemClipboard();
-        clipboard.setContents(new StringSelection(data), null);
-    }
-
-    private void clearClipboard()
-    {
-        Clipboard clipboard = getSystemClipboard();
-        clipboard.setContents(new StringSelection(""), null);
-    }
-
-    public Clipboard getSystemClipboard()
-    {
-        return Toolkit.getDefaultToolkit().getSystemClipboard();
+        if(clipboardData.isHtmlFlavor())
+        {
+            ClipboardUtils.copyToClipboard(clipboardData);
+        }
+        else
+        {
+            ClipboardUtils.copyToClipboard(clipboardData.getContent());
+        }
     }
 }
