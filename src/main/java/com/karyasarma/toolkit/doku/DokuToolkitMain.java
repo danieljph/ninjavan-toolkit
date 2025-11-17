@@ -82,7 +82,11 @@ public class DokuToolkitMain implements ActionListener
     private final SimpleMenu miscParentSm = new SimpleMenu("Misc");
 
     private final SimpleMenu confluenceToCodeBlockPlaintextSm = new SimpleMenu("Confluence - To Code Block - Plaintext", new MenuShortcut(KeyEvent.VK_T));
-    private final SimpleMenu confluenceToCodeBlockSqlSm = new SimpleMenu("Confluence - To Code Block - SQL", new MenuShortcut(KeyEvent.VK_T));
+    private final SimpleMenu confluenceToCodeBlockSqlSm = new SimpleMenu("Confluence - To Code Block - SQL");
+    private final SimpleMenu confluenceBlankCodeBlockPlaintextSm = new SimpleMenu("Confluence - Blank Code Block - Plaintext");
+    private final SimpleMenu confluenceBlankCodeBlockSqlSm = new SimpleMenu("Confluence - Blank Code Block - SQL");
+    private final SimpleMenu confluenceBlankExpandSm = new SimpleMenu("Confluence - Blank Expand");
+    private final SimpleMenu confluenceBlankExpandPlusCodeBlockSm = new SimpleMenu("Confluence - Blank Expand + Code Block");
 
     private final SimpleMenu jwtDecodeSm = new SimpleMenu("JWT Decode", new MenuShortcut(KeyEvent.VK_W));
     private final SimpleMenu jwtEncodeSm = new SimpleMenu("JWT Encode", new MenuShortcut(KeyEvent.VK_W, true));
@@ -179,6 +183,10 @@ public class DokuToolkitMain implements ActionListener
 
         miscParentSm.addChild(confluenceToCodeBlockPlaintextSm);
         miscParentSm.addChild(confluenceToCodeBlockSqlSm);
+        miscParentSm.addChild(confluenceBlankCodeBlockPlaintextSm);
+        miscParentSm.addChild(confluenceBlankCodeBlockSqlSm);
+        miscParentSm.addChild(confluenceBlankExpandSm);
+        miscParentSm.addChild(confluenceBlankExpandPlusCodeBlockSm);
 
         miscParentSm.addChild(separatorSm);
 
@@ -531,6 +539,50 @@ public class DokuToolkitMain implements ActionListener
                 String data = ClipboardUtils.getDataFromStringFlavor();
                 System.out.println("Data: \n" + data);
                 ClipboardUtils.copyToClipboard(ConfluenceUtils.toCodeBlockSql(data));
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(confluenceBlankCodeBlockPlaintextSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.blankCodeBlockPlainText());
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(confluenceBlankCodeBlockSqlSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.blankCodeBlockSql());
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(confluenceBlankExpandSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.blankExpand());
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+            }
+        }
+        else if(confluenceBlankExpandPlusCodeBlockSm.getName().equals(actionCommand))
+        {
+            try
+            {
+                ClipboardUtils.copyToClipboard(ConfluenceUtils.blankExpandPlusCodeBlock());
             }
             catch(Exception ex)
             {

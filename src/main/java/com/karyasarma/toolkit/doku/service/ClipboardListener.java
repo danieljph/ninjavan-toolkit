@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -17,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ClipboardListener implements Runnable
 {
+    private static final int MAX_CLIPBOARD_DATA_LENGTH = 100_000;
+
     private final ClipboardHistoryData clipboardHistoryData = new ClipboardHistoryData(20);
     private final Menu clipboardHistoryMenu;
     private final MenuItem clearClipboardHistoryMi;
@@ -85,16 +88,32 @@ public class ClipboardListener implements Runnable
                 try
                 {
                     Transferable transferable = ClipboardUtils.getContents(null);
-                    String content = (String) transferable.getTransferData(DataFlavor.stringFlavor);
+                    boolean isHtmlFlavor = transferable.isDataFlavorSupported(DataFlavor.allHtmlFlavor);
+                    String content;
+                    String contentHtml;
 
-                    if(StringUtils.isBlank(content) || content.length() > 100_000)
+                    if(isHtmlFlavor)
                     {
-                        continue;
-                    }
+                        contentHtml = (String) transferable.getTransferData(DataFlavor.allHtmlFlavor);
 
-                    String contentHtml = transferable.isDataFlavorSupported(DataFlavor.allHtmlFlavor)
-                        ? (String) transferable.getTransferData(DataFlavor.allHtmlFlavor)
-                        : null;
+                        if(StringUtils.isBlank(contentHtml) || contentHtml.length() > MAX_CLIPBOARD_DATA_LENGTH)
+                        {
+                            continue;
+                        }
+
+                        content = (String) transferable.getTransferData(DataFlavor.stringFlavor);
+                    }
+                    else
+                    {
+                        content = (String) transferable.getTransferData(DataFlavor.stringFlavor);
+
+                        if(StringUtils.isBlank(content) || content.length() > MAX_CLIPBOARD_DATA_LENGTH)
+                        {
+                            continue;
+                        }
+
+                        contentHtml = null;
+                    }
 
                     ClipboardData currentClipboardData = new ClipboardData(content, contentHtml);
 
@@ -149,8 +168,11 @@ public class ClipboardListener implements Runnable
                     }
 
                     String menuItemLabelPrefix = clipboardData.isHtmlFlavor() ? "⛳ " : "";
+                    String menuItemLabelContent = Optional.ofNullable(clipboardData.getContent())
+                        .filter(StringUtils::isNotBlank)
+                        .orElse(clipboardData.getContentHtml());
 
-                    MenuItem menuItem = new MenuItem(menuItemLabelPrefix + clipboardData.getContent());
+                    MenuItem menuItem = new MenuItem(menuItemLabelPrefix + menuItemLabelContent);
                     menuItem.addActionListener(it -> copyToClipboard(clipboardData));
                     menuItem.setShortcut(menuShortcut);
                     clipboardHistoryMenu.add(menuItem);
