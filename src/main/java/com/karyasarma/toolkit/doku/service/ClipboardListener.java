@@ -3,12 +3,14 @@ package com.karyasarma.toolkit.doku.service;
 import com.karyasarma.toolkit.doku.model.ClipboardData;
 import com.karyasarma.toolkit.doku.model.ClipboardHistoryData;
 import com.karyasarma.toolkit.doku.util.ClipboardUtils;
+import com.karyasarma.toolkit.doku.util.ConfluenceUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,15 +25,17 @@ public class ClipboardListener implements Runnable
     private final ClipboardHistoryData clipboardHistoryData = new ClipboardHistoryData(20);
     private final Menu clipboardHistoryMenu;
     private final MenuItem clearClipboardHistoryMi;
+    private final CheckboxMenuItem keepPositionMi;
 
     private final AtomicBoolean isListening = new AtomicBoolean(false);
 
     private Thread runningThread;
 
-    public ClipboardListener(Menu clipboardHistoryMenu, MenuItem clearClipboardHistoryMi)
+    public ClipboardListener(Menu clipboardHistoryMenu, MenuItem clearClipboardHistoryMi, CheckboxMenuItem keepPositionMi)
     {
         this.clipboardHistoryMenu = clipboardHistoryMenu;
         this.clearClipboardHistoryMi = clearClipboardHistoryMi;
+        this.keepPositionMi = keepPositionMi;
     }
 
     public void startListening()
@@ -119,7 +123,7 @@ public class ClipboardListener implements Runnable
 
                     if(isListening.get() && clipboardHistoryData.isClipboardDataChanged(currentClipboardData))
                     {
-                        clipboardHistoryData.push(currentClipboardData);
+                        clipboardHistoryData.push(currentClipboardData, keepPositionMi.getState());
                         updateMenu(false);
                     }
 
@@ -143,6 +147,7 @@ public class ClipboardListener implements Runnable
     public void clearClipboardHistory()
     {
         ClipboardUtils.clearClipboard();
+        clipboardHistoryData.setActiveClipboardData(null);
         clipboardHistoryData.clear();
         updateMenu(true);
     }
@@ -156,37 +161,73 @@ public class ClipboardListener implements Runnable
             if(!clearMenu)
             {
                 int index = 0;
-                int keyEvent = KeyEvent.VK_1;
 
                 for(ClipboardData clipboardData : clipboardHistoryData)
                 {
-                    MenuShortcut menuShortcut = null;
-
-                    if(index < 9)
-                    {
-                        menuShortcut = new MenuShortcut(keyEvent++);
-                    }
-
-                    String menuItemLabelPrefix = clipboardData.isHtmlFlavor() ? "⛳ " : "";
-                    String menuItemLabelContent = Optional.ofNullable(clipboardData.getContent())
-                        .filter(StringUtils::isNotBlank)
-                        .orElse(clipboardData.getContentHtml());
-
-                    MenuItem menuItem = new MenuItem(menuItemLabelPrefix + menuItemLabelContent);
-                    menuItem.addActionListener(it -> copyToClipboard(clipboardData));
-                    menuItem.setShortcut(menuShortcut);
+                    MenuItem menuItem = createMenuItem(clipboardData, index++);
                     clipboardHistoryMenu.add(menuItem);
-
-                    index++;
                 }
 
                 if(!clipboardHistoryData.isEmpty())
                 {
                     clipboardHistoryMenu.addSeparator();
+                    clipboardHistoryMenu.add(keepPositionMi);
                     clipboardHistoryMenu.add(clearClipboardHistoryMi);
                 }
             }
         });
+    }
+
+    private MenuItem createMenuItem(ClipboardData clipboardData, int index)
+    {
+        MenuShortcut menuShortcut = null;
+
+        if(index < 9)
+        {
+            menuShortcut = new MenuShortcut(KeyEvent.VK_1 + index);
+        }
+
+        String menuItemLabelActive = clipboardData.equals(clipboardHistoryData.getActiveClipboardData())? "\uD83D\uDC49 " : "";
+        String menuItemLabelPrefix = clipboardData.isHtmlFlavor() ? "⛳ " : "";
+        String menuItemLabelContent = Optional.ofNullable(clipboardData.getContent())
+            .filter(StringUtils::isNotBlank)
+            .orElse(
+                Optional.ofNullable(clipboardData.getContentHtml())
+                    .map(ConfluenceUtils::getContentName)
+                    .orElse(clipboardData.getContentHtml())
+            );
+
+        MenuItem menuItem = new MenuItem(menuItemLabelActive + menuItemLabelPrefix + menuItemLabelContent);
+        menuItem.addActionListener(it ->
+        {
+            if((it.getModifiers() & ActionEvent.SHIFT_MASK) != 0)
+            {
+                if(clipboardData.equals(clipboardHistoryData.getActiveClipboardData()))
+                {
+                    ClipboardUtils.clearClipboard();
+                    clipboardHistoryData.setActiveClipboardData(null);
+                }
+
+                clipboardHistoryData.remove(clipboardData);
+
+                updateMenu(false);
+            }
+            else
+            {
+                copyToClipboard(clipboardData);
+            }
+        });
+        menuItem.setShortcut(menuShortcut);
+
+        return menuItem;
+    }
+
+    public void copyToClipboard(int clipboardIndex)
+    {
+        if(clipboardIndex >= 0 && clipboardIndex < clipboardHistoryData.size())
+        {
+            copyToClipboard(clipboardHistoryData.get(clipboardIndex));
+        }
     }
 
     private void copyToClipboard(ClipboardData clipboardData)

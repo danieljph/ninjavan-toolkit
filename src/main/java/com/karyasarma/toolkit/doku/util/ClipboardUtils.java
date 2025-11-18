@@ -25,7 +25,7 @@ public class ClipboardUtils
         return getSystemClipboard().getContents(requestor);
     }
 
-    public static <T> T getDataFromStringFlavor() throws IOException, UnsupportedFlavorException
+    public static String getDataFromStringFlavor() throws IOException, UnsupportedFlavorException
     {
         return getData(DataFlavor.stringFlavor);
     }
@@ -34,6 +34,11 @@ public class ClipboardUtils
     public static <T> T getData(DataFlavor flavor) throws IOException, UnsupportedFlavorException
     {
         return (T) getSystemClipboard().getData(flavor);
+    }
+
+    public static void convertCurrentClipboardToPlainText() throws IOException, UnsupportedFlavorException
+    {
+        copyToClipboard(getDataFromStringFlavor());
     }
 
     public static void copyToClipboard(String data)

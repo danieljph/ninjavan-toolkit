@@ -34,23 +34,22 @@ public class ClipboardData
     }
 
     @Override
-    public boolean equals(Object o)
+    public boolean equals(Object other)
     {
-        if(o == null || getClass() != o.getClass())
+        if(other == null || getClass() != other.getClass())
         {
             return false;
         }
 
-        return isHtmlFlavor()
-            ? Strings.CS.equals(getContentHtml(), ((ClipboardData) o).getContentHtml())
-            : Strings.CS.equals(getContent(), ((ClipboardData) o).getContent());
+        ClipboardData otherClipboardData = (ClipboardData) other;
+
+        return Strings.CS.equals(getContent(), otherClipboardData.getContent())
+            && Strings.CS.equals(getContentHtml(), otherClipboardData.getContentHtml());
     }
 
     @Override
     public int hashCode()
     {
-        return isHtmlFlavor()
-            ? Objects.hash(getContentHtml())
-            : Objects.hash(getContent());
+        return Objects.hash(content, contentHtml);
     }
 }

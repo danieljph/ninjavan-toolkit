@@ -1,7 +1,6 @@
 package com.karyasarma.toolkit.doku.model;
 
 import java.util.ArrayList;
-import java.util.Optional;
 
 /**
  * @author Daniel Joi Partogi Hutapea
@@ -9,6 +8,7 @@ import java.util.Optional;
 public class ClipboardHistoryData extends ArrayList<ClipboardData>
 {
     private final int maxSize;
+    private ClipboardData activeClipboardData;
 
     public ClipboardHistoryData(int size)
     {
@@ -16,9 +16,21 @@ public class ClipboardHistoryData extends ArrayList<ClipboardData>
         this.maxSize = size;
     }
 
-    public void push(ClipboardData clipboardData)
+    public void push(ClipboardData clipboardData, boolean keepPosition)
     {
-        remove(clipboardData);
+        activeClipboardData = clipboardData;
+
+        if(keepPosition)
+        {
+            if(contains(clipboardData))
+            {
+                return;
+            }
+        }
+        else
+        {
+            remove(clipboardData);
+        }
 
         // If the data is too big, remove elements until it's the right size.
         while(size() >= maxSize)
@@ -29,6 +41,16 @@ public class ClipboardHistoryData extends ArrayList<ClipboardData>
         add(0, clipboardData);
     }
 
+    public void setActiveClipboardData(ClipboardData activeClipboardData)
+    {
+        this.activeClipboardData = activeClipboardData;
+    }
+
+    public ClipboardData getActiveClipboardData()
+    {
+        return activeClipboardData;
+    }
+
     public ClipboardData peek()
     {
         return size()==0 ? null : get(0);
@@ -36,7 +58,7 @@ public class ClipboardHistoryData extends ArrayList<ClipboardData>
 
     public boolean isClipboardDataChanged(ClipboardData currentClipboardData)
     {
-        ClipboardData peek = peek();
+        ClipboardData peek = getActiveClipboardData();
 
         if(peek == null)
         {
