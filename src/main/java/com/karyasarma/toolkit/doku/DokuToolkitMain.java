@@ -73,6 +73,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
     private MenuItem clipboardToPlainTextMi;
 
     @SuppressWarnings("FieldCanBeLocal")
+    private Menu settingsMenu;
+    private MenuItem enableSoundMi;
+
+    @SuppressWarnings("FieldCanBeLocal")
     private CheckboxMenuItem keepPositionMi;
 
     private MenuItem clearClipboardHistoryMi;
@@ -174,6 +178,14 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         clearClipboardHistoryMi.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
 
         popupMenu.addSeparator();
+
+        settingsMenu = new Menu("Settings");
+        settingsMenu.addActionListener(this);
+        popupMenu.add(settingsMenu);
+
+        enableSoundMi = new MenuItem(Mp3Utils.getEnableSoundMiLabel());
+        enableSoundMi.addActionListener(this);
+        settingsMenu.add(enableSoundMi);
 
         listOfSimpleMenu.add(parseLogsSimplifiedSm);
         listOfSimpleMenu.add(parseLogsSm);
@@ -538,6 +550,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
             else if(source == clearClipboardHistoryMi)
             {
                 clearClipboardHistoryMiClicked();
+            }
+            else if(source == enableSoundMi)
+            {
+                enableSoundMiClicked();
             }
             else if(source==quitMi)
             {
@@ -930,6 +946,19 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         (
             ClipboardUtils::convertCurrentClipboardToPlainText,
             "clipboardToPlainTextMiClicked"
+        );
+    }
+
+    private void enableSoundMiClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime
+        (
+            () ->
+            {
+                Mp3Utils.setSoundEnabled(Mp3Utils.isSoundDisabled());
+                enableSoundMi.setLabel(Mp3Utils.getEnableSoundMiLabel());
+            },
+            "enableSoundMiClicked"
         );
     }
 
