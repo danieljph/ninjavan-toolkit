@@ -21,6 +21,7 @@ import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
 import com.karyasarma.toolkit.doku.util.JwtUtils;
 import com.karyasarma.toolkit.doku.util.LiquibaseYamlUtils;
 import com.karyasarma.toolkit.doku.util.Mp3Utils;
+import com.karyasarma.toolkit.doku.util.ProxyAuMockServerUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -112,6 +113,8 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
     private final SimpleMenu passwordLdapSm = new SimpleMenu("Password LDAP ⭐", new MenuShortcut(KeyEvent.VK_L));
 
     private final SimpleMenu miscParentSm = new SimpleMenu("Misc");
+
+    private final SimpleMenu convertUrlToProxyAuMockServerSm = new SimpleMenu("Convert URL to Proxy AU MockServer or Vice Versa");
 
     private final SimpleMenu confluenceToCodeBlockPlaintextSm = new SimpleMenu("Confluence - To Code Block - Plaintext ⭐", new MenuShortcut(KeyEvent.VK_U, true));
     private final SimpleMenu confluenceToCodeBlockSqlSm = new SimpleMenu("Confluence - To Code Block - SQL");
@@ -230,6 +233,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         listOfSimpleMenu.add(0, miscParentSm);
 
         listOfSimpleMenu.add(1, separatorSm);
+
+        miscParentSm.addChild(convertUrlToProxyAuMockServerSm);
+
+        miscParentSm.addChild(separatorSm);
 
         miscParentSm.addChild(confluenceToCodeBlockPlaintextSm);
         miscParentSm.addChild(confluenceToCodeBlockSqlSm);
@@ -466,6 +473,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         else if(passwordLdapSm.getName().equals(actionCommand))
         {
             passwordLdapSmClicked();
+        }
+        else if(convertUrlToProxyAuMockServerSm.getName().equals(actionCommand))
+        {
+            convertUrlToProxyAuMockServerSmClicked();
         }
         else if(confluenceToCodeBlockPlaintextSm.getName().equals(actionCommand))
         {
@@ -775,6 +786,15 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
                 ClipboardUtils.copyToClipboard(passwordVpn);
             }
         }, "passwordLdapSmClicked");
+    }
+
+    private void convertUrlToProxyAuMockServerSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(ProxyAuMockServerUtils.convertUrlToProxyAuMockServerOrViceVersa(data));
+        }, "convertUrlToProxyAuMockServerSmClicked");
     }
 
     private void confluenceToCodeBlockPlaintextSmClicked()
