@@ -3,7 +3,7 @@ package com.karyasarma.toolkit.misc;
 import org.junit.jupiter.api.Test;
 
 import static com.karyasarma.toolkit.misc.GzipUtils.gzipAndBase64;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Daniel Joi Partogi Hutapea

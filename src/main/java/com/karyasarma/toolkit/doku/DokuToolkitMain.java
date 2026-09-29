@@ -1,5 +1,8 @@
 package com.karyasarma.toolkit.doku;
 
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.kwhat.jnativehook.GlobalScreen;
@@ -143,7 +146,28 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final ObjectMapper objectMapperPretty = new ObjectMapper()
+        .setDefaultPrettyPrinter(
+            new DefaultPrettyPrinter()
+                .withSeparators(
+                    Separators
+                        .createDefaultInstance()
+                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER)
+                )
+                .withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
+        )
+        .enable(SerializationFeature.INDENT_OUTPUT);
+
     private final ObjectMapper objectMapperPrettyAndSortPropertiesAlphabetically = new ObjectMapper()
+        .setDefaultPrettyPrinter(
+            new DefaultPrettyPrinter()
+                .withSeparators(
+                    Separators
+                        .createDefaultInstance()
+                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER)
+                )
+                .withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
+        )
         .enable(SerializationFeature.INDENT_OUTPUT)
         .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
@@ -623,7 +647,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         {
             String jsonData = ClipboardUtils.getDataFromStringFlavor();
             Object temp = objectMapper.readValue(jsonData, Object.class);
-            ClipboardUtils.copyToClipboard(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(temp));
+            ClipboardUtils.copyToClipboard(objectMapperPretty.writeValueAsString(temp));
         }, "prettyJsonSmClicked");
     }
 
@@ -937,7 +961,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
         {
             String curlData = ClipboardUtils.getDataFromStringFlavor();
-            String curlDataOld = curlData.replaceAll("--data-raw", "--data");
+            String curlDataOld = curlData.replace("--data-raw", "--data");
             ClipboardUtils.copyToClipboard(curlDataOld);
         }, "toOldCurlSmClicked");
     }
