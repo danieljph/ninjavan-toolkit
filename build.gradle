@@ -2,10 +2,14 @@ plugins {
     id 'java'
 }
 
-group 'com.karyasarma'
-version '1.2.10'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
-sourceCompatibility = 1.8
+group 'com.karyasarma'
+version '1.3.0'
 
 repositories {
     mavenCentral()

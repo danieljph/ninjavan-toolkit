@@ -1,10 +1,5 @@
 package com.karyasarma.toolkit.doku;
 
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.core.util.Separators;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
@@ -21,6 +16,7 @@ import com.karyasarma.toolkit.doku.util.ClipboardUtils;
 import com.karyasarma.toolkit.doku.util.ConfluenceUtils;
 import com.karyasarma.toolkit.doku.util.DbeaverUtils;
 import com.karyasarma.toolkit.doku.util.JsonSchemaUtil;
+import com.karyasarma.toolkit.doku.util.JsonUtils;
 import com.karyasarma.toolkit.doku.util.JwtUtils;
 import com.karyasarma.toolkit.doku.util.LiquibaseYamlUtils;
 import com.karyasarma.toolkit.doku.util.Mp3Utils;
@@ -119,7 +115,8 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
 
     private final SimpleMenu convertUrlToProxyAuMockServerSm = new SimpleMenu("Convert URL to Proxy AU MockServer or Vice Versa");
 
-    private final SimpleMenu confluenceToCodeBlockPlaintextSm = new SimpleMenu("Confluence - To Code Block - Plaintext ⭐", new MenuShortcut(KeyEvent.VK_U, true));
+    private final SimpleMenu confluenceParseServerLogsSm = new SimpleMenu("Confluence - Parse Server Logs ⭐", new MenuShortcut(KeyEvent.VK_U, true));
+    private final SimpleMenu confluenceToCodeBlockPlaintextSm = new SimpleMenu("Confluence - To Code Block - Plaintext");
     private final SimpleMenu confluenceToCodeBlockSqlSm = new SimpleMenu("Confluence - To Code Block - SQL");
     private final SimpleMenu confluenceBlankCodeBlockPlaintextSm = new SimpleMenu("Confluence - Blank Code Block - Plaintext");
     private final SimpleMenu confluenceBlankCodeBlockSqlSm = new SimpleMenu("Confluence - Blank Code Block - SQL");
@@ -143,33 +140,6 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
     private final SimpleMenu cheatNoBugsSm = new SimpleMenu("Cheat No Bugs");
 
     private MenuItem quitMi;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final ObjectMapper objectMapperPretty = new ObjectMapper()
-        .setDefaultPrettyPrinter(
-            new DefaultPrettyPrinter()
-                .withSeparators(
-                    Separators
-                        .createDefaultInstance()
-                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER)
-                )
-                .withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
-        )
-        .enable(SerializationFeature.INDENT_OUTPUT);
-
-    private final ObjectMapper objectMapperPrettyAndSortPropertiesAlphabetically = new ObjectMapper()
-        .setDefaultPrettyPrinter(
-            new DefaultPrettyPrinter()
-                .withSeparators(
-                    Separators
-                        .createDefaultInstance()
-                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER)
-                )
-                .withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
-        )
-        .enable(SerializationFeature.INDENT_OUTPUT)
-        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
     private final Map<String, AtomicLong> mapOfMethodCallLastExecution = new HashMap<>();
 
@@ -262,6 +232,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
 
         miscParentSm.addChild(separatorSm);
 
+        miscParentSm.addChild(confluenceParseServerLogsSm);
         miscParentSm.addChild(confluenceToCodeBlockPlaintextSm);
         miscParentSm.addChild(confluenceToCodeBlockSqlSm);
         miscParentSm.addChild(confluenceBlankCodeBlockPlaintextSm);
@@ -502,6 +473,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         {
             convertUrlToProxyAuMockServerSmClicked();
         }
+        else if(confluenceParseServerLogsSm.getName().equals(actionCommand))
+        {
+            confluenceParseServerLogsSmClicked();
+        }
         else if(confluenceToCodeBlockPlaintextSm.getName().equals(actionCommand))
         {
             confluenceToCodeBlockPlaintextSmClicked();
@@ -646,8 +621,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
         {
             String jsonData = ClipboardUtils.getDataFromStringFlavor();
-            Object temp = objectMapper.readValue(jsonData, Object.class);
-            ClipboardUtils.copyToClipboard(objectMapperPretty.writeValueAsString(temp));
+            ClipboardUtils.copyToClipboard(JsonUtils.prettify(jsonData));
         }, "prettyJsonSmClicked");
     }
 
@@ -656,8 +630,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
         {
             String jsonData = ClipboardUtils.getDataFromStringFlavor();
-            Object temp = objectMapper.readValue(jsonData, Object.class);
-            ClipboardUtils.copyToClipboard(objectMapper.writeValueAsString(temp));
+            ClipboardUtils.copyToClipboard(JsonUtils.minify(jsonData));
         }, "compactJsonSmClicked");
     }
 
@@ -666,8 +639,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
         {
             String jsonData = ClipboardUtils.getDataFromStringFlavor();
-            Object temp = objectMapperPrettyAndSortPropertiesAlphabetically.readValue(jsonData, Object.class);
-            ClipboardUtils.copyToClipboard(objectMapperPrettyAndSortPropertiesAlphabetically.writeValueAsString(temp));
+            ClipboardUtils.copyToClipboard(JsonUtils.ordered(jsonData));
         }, "orderedJsonSmClicked");
     }
 
@@ -819,6 +791,15 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
             String data = ClipboardUtils.getDataFromStringFlavor();
             ClipboardUtils.copyToClipboard(ProxyAuMockServerUtils.convertUrlToProxyAuMockServerOrViceVersa(data));
         }, "convertUrlToProxyAuMockServerSmClicked");
+    }
+
+    private void confluenceParseServerLogsSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(ConfluenceUtils.parseLogsToExpandPlusCodeBlock(data));
+        }, "confluenceParseServerLogsSmClicked");
     }
 
     private void confluenceToCodeBlockPlaintextSmClicked()
