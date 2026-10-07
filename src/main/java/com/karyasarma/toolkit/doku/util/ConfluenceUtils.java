@@ -143,6 +143,28 @@ public class ConfluenceUtils
         </table>
         """;
 
+    private static final String EXPAND_PLUS_CODE_BLOCK_ISO_8583_REQUEST_TEMPLATE = """
+        <table class="wysiwyg-macro" data-macro-name="expand" data-macro-parameters="title=%s" data-macro-schema-version="1" data-macro-body-type="RICH_TEXT" style="background-color: rgb(240, 240, 240); background-position: 0px 0px; background-repeat: no-repeat; border: 1px solid rgb(221, 221, 221); margin-top: 10px; padding: 24px 2px 2px; width: 1432px; border-collapse: separate; cursor: move; background-image: url(&quot;/plugins/servlet/confluence/placeholder/macro-heading?definition=e2V4cGFuZH0&amp;locale=en_GB&amp;version=2&quot;);">
+          <tbody>
+            <tr>
+              <td class="wysiwyg-macro-body" style="white-space: pre-wrap; background-color: rgb(255, 255, 255); border: 1px solid rgb(221, 221, 221); margin: 0px; padding: 10px; cursor: text;">
+                <p class="auto-cursor-target" style="margin: 0px;"><br></p>
+                <table class="wysiwyg-macro" data-macro-name="code" data-macro-parameters="language=text|title=Full HTTP Logs" data-macro-schema-version="1" data-macro-body-type="PLAIN_TEXT" style="background-color: rgb(240, 240, 240); background-position: 0px 0px; background-repeat: no-repeat; border: 1px solid rgb(221, 221, 221); margin-top: 10px; padding: 24px 2px 2px; width: 1400px; border-collapse: separate; cursor: move; background-image: url(&quot;/plugins/servlet/confluence/placeholder/macro-heading?definition=e2NvZGU6bGFuZ3VhZ2U9dGV4dH0&amp;locale=en_GB&amp;version=2&quot;);">
+                  <tbody>
+                    <tr>
+                      <td class="wysiwyg-macro-body" style="white-space: pre-wrap; background-color: rgb(255, 255, 255); border: 1px solid rgb(221, 221, 221); margin: 0px; padding: 10px; min-width: 200px; cursor: text;">
+                        <pre style="margin: 0px; tab-size: 4; white-space: pre-wrap;">%s<br></pre>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="auto-cursor-target" style="margin: 10px 0px 0px;"><br></p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        """;
+
     private static final Pattern DD_CORE_SYSTEM_LOG_PREFIX_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+(ERROR|INFO|WARN|DEBUG)\\s+\\[.*");
 
     private static final Pattern DD_CORE_SYSTEM_LOG_API_HTTP_LOGS_PATTERN = Pattern.compile(".*CommonAppRequestFilter\\s+:\\sHTTP Logs:.*", Pattern.DOTALL);
@@ -154,6 +176,7 @@ public class ConfluenceUtils
     private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_SPLIT_PATTERN = Pattern.compile("Sending\\sKafka\\sto\\stopic\\s:\\s(.*),\\smessage\\s:\\s");
 
     private static final Pattern WT_API_TRANSACTION_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN = Pattern.compile(".*Producing\\smessage\\s([a-zA-Z-]*)\\s(?:with\\sheaders:\\s)?(.*)\\s->\\s(.*).*");
+    private static final Pattern WT_API_TRANSACTION_SYSTEM_LOG_ISO_8583_REQ_AND_RESP_PATTERN = Pattern.compile(".*] (BANK_MANDIRI|BNI) (.*) (REQUEST|RESPONSE) : (\\{.*)", Pattern.DOTALL);
 
     private ConfluenceUtils()
     {
@@ -262,6 +285,10 @@ public class ConfluenceUtils
 
         var listOf1HttpRequestLogs = new ArrayList<StringBuilder>();
         var httpRequestFound = false;
+
+        var listOfWtApiTransactionCybersourceHttpRequestLogs = new ArrayList<StringBuilder>();
+        var listOfIso8583RequestLogs = new ArrayList<StringBuilder>();
+
         Matcher matcher;
 
         for(var log : listOfGroupedLog)
@@ -339,18 +366,75 @@ public class ConfluenceUtils
             }
             else if(log.indexOf("CLIENT HTTP REQUEST START") != -1)
             {
+                insertContentHtmlForHttpRequestLogs(contentHtml, listOf1HttpRequestLogs);
                 httpRequestFound = true;
-                listOf1HttpRequestLogs = new ArrayList<>();
             }
             else if(log.indexOf("CLIENT HTTP REQUEST FINISH") != -1)
             {
-                contentHtml.append(generateContentHtmlForHttpRequestLogs(listOf1HttpRequestLogs));
+                insertContentHtmlForHttpRequestLogs(contentHtml, listOf1HttpRequestLogs);
+                httpRequestFound = false;
             }
             else if(httpRequestFound)
             {
                 listOf1HttpRequestLogs.add(log);
             }
+            else if(log.indexOf("] Cybersource") != -1)
+            {
+                if(log.indexOf("Cybersource URL :") != -1)
+                {
+                    insertContentHtmlForWtApiTransactionCybersourceHttpRequestLogs(contentHtml, listOfWtApiTransactionCybersourceHttpRequestLogs);
+                    listOfWtApiTransactionCybersourceHttpRequestLogs.add(log);
+                }
+                else if
+                (
+                    log.indexOf("Cybersource Response :") != -1 ||
+                    log.indexOf("Cybersource Failed Response :") != -1
+                )
+                {
+                    listOfWtApiTransactionCybersourceHttpRequestLogs.add(log);
+                    insertContentHtmlForWtApiTransactionCybersourceHttpRequestLogs(contentHtml, listOfWtApiTransactionCybersourceHttpRequestLogs);
+                }
+            }
+            else if(log.indexOf("] Payment URL: ") != -1)
+            {
+                insertContentHtmlForWtApiTransactionIso8583RequestLogs(contentHtml, listOfIso8583RequestLogs);
+
+                try
+                {
+                    var paymentUrl = log.toString().split(" Payment URL: ")[1];
+                    listOfIso8583RequestLogs.add(new StringBuilder("Payment URL: ").append(paymentUrl));
+                }
+                catch(Exception ex)
+                {
+                    ex.printStackTrace(System.err);
+                }
+            }
+            else if((matcher = WT_API_TRANSACTION_SYSTEM_LOG_ISO_8583_REQ_AND_RESP_PATTERN.matcher(log)).matches())
+            {
+                try
+                {
+                    var acquirer = matcher.group(1);
+                    var transactionType = matcher.group(2);
+                    var requestOrResponse = matcher.group(3);
+                    var payload = matcher.group(4);
+
+                    var logNormalized = "%s %s %s:\n%s".formatted(acquirer, transactionType, requestOrResponse, payload);
+                    listOfIso8583RequestLogs.add(new StringBuilder(logNormalized));
+
+                    if("RESPONSE".equals(requestOrResponse))
+                    {
+                        insertContentHtmlForWtApiTransactionIso8583RequestLogs(contentHtml, listOfIso8583RequestLogs);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    ex.printStackTrace(System.err);
+                }
+            }
         }
+
+        // If Cybersource Response never found, then will keep added the premature HTTP Request logs
+        insertContentHtmlForWtApiTransactionCybersourceHttpRequestLogs(contentHtml, listOfWtApiTransactionCybersourceHttpRequestLogs);
 
         contentHtml.append(fullLogsHtml); // Add full logs at the bottom.
 
@@ -364,23 +448,29 @@ public class ConfluenceUtils
         var addHttpRequestPattern = (BiConsumer<String, String>) (key, valuePattern) ->
             MAP_OF_PATTERN_OF_HTTP_REQUEST.computeIfAbsent(key, k -> new ArrayList<>()).add(Pattern.compile(valuePattern));
 
-        addHttpRequestPattern.accept("requestUrl",      "LoggingClientInterceptor\\s+:\\sRequest\\sURL\\s+:\\s");
-        addHttpRequestPattern.accept("requestHeaders",  "LoggingClientInterceptor\\s+:\\sRequest\\sHeader\\s+:\\s");
-        addHttpRequestPattern.accept("requestBody",     "LoggingClientInterceptor\\s+:\\sRequest\\sbody\\s+:\\s");
-        addHttpRequestPattern.accept("responseStatus",  "LoggingClientInterceptor\\s+:\\sResponse\\sstatus\\s+:\\s");
-        addHttpRequestPattern.accept("responseHeaders", "LoggingClientInterceptor\\s+:\\sResponse\\sheader\\s+:\\s");
-        addHttpRequestPattern.accept("responseBody",    "LoggingClientInterceptor\\s+:\\sResponse\\sbody\\s+:\\s");
+        addHttpRequestPattern.accept("requestUrl",      "LoggingClientInterceptor\\s+: Request URL\\s+: ");
+        addHttpRequestPattern.accept("requestHeaders",  "LoggingClientInterceptor\\s+: Request Header\\s+: ");
+        addHttpRequestPattern.accept("requestBody",     "LoggingClientInterceptor\\s+: Request body\\s+: ");
+        addHttpRequestPattern.accept("responseStatus",  "LoggingClientInterceptor\\s+: Response status\\s+: ");
+        addHttpRequestPattern.accept("responseHeaders", "LoggingClientInterceptor\\s+: Response header\\s+: ");
+        addHttpRequestPattern.accept("responseBody",    "LoggingClientInterceptor\\s+: Response body\\s+: ");
 
-        addHttpRequestPattern.accept("requestUrl",      "Request\\s+:\\s");
-        addHttpRequestPattern.accept("requestHeaders",  "Request\\sHeader\\s+:\\s");
-        addHttpRequestPattern.accept("requestBody",     "Request\\sBody\\s+:\\s");
-        addHttpRequestPattern.accept("responseStatus",  "Response\\sStatus\\s+:\\s");
-        addHttpRequestPattern.accept("responseHeaders", "Response\\sHeader\\s+:\\s");
-        addHttpRequestPattern.accept("responseBody",    "Response\\sBody\\s+:\\s");
+        addHttpRequestPattern.accept("requestUrl",      "Request\\s+: ");
+        addHttpRequestPattern.accept("requestHeaders",  "Request Header\\s+: ");
+        addHttpRequestPattern.accept("requestBody",     "Request Body\\s+: ");
+        addHttpRequestPattern.accept("responseStatus",  "Response Status\\s+: ");
+        addHttpRequestPattern.accept("responseHeaders", "Response Header\\s+: ");
+        addHttpRequestPattern.accept("responseBody",    "Response Body\\s+: ");
     }
 
-    private static String generateContentHtmlForHttpRequestLogs(List<StringBuilder> listOf1HttpRequestLogs)
+    @SuppressWarnings("DuplicatedCode")
+    private static void insertContentHtmlForHttpRequestLogs(StringBuilder contentHtml, List<StringBuilder> listOf1HttpRequestLogs)
     {
+        if(listOf1HttpRequestLogs.isEmpty())
+        {
+            return;
+        }
+
         var mapOfPatternOfHttpRequestTemp = new LinkedHashMap<>(MAP_OF_PATTERN_OF_HTTP_REQUEST);
         var mapOfValue = new HashMap<String, String>();
 
@@ -413,24 +503,144 @@ public class ConfluenceUtils
             }
         }
 
-        var httpRequestLogsTemplateData = new StringBuilder();
-        httpRequestLogsTemplateData.append("Request URL      : ").append(mapOfValue.getOrDefault("requestUrl", "")).append("<br>");
-        httpRequestLogsTemplateData.append("Request Headers  : ").append(mapOfValue.getOrDefault("requestHeaders", "")).append("<br>");
-        httpRequestLogsTemplateData.append("Request Body     : ").append(mapOfValue.getOrDefault("requestBody", "")).append("<br>");
-        httpRequestLogsTemplateData.append("<br>");
-        httpRequestLogsTemplateData.append("Response Status  : ").append(mapOfValue.getOrDefault("responseStatus", "")).append("<br>");
-        httpRequestLogsTemplateData.append("Response Headers : ").append(mapOfValue.getOrDefault("responseHeaders", "")).append("<br>");
-        httpRequestLogsTemplateData.append("Response Body    : ").append(mapOfValue.getOrDefault("responseBody", ""));
+        var templateData = new StringBuilder();
+        templateData.append("Request URL      : ").append(mapOfValue.getOrDefault("requestUrl", "")).append("<br>");
+        templateData.append("Request Headers  : ").append(mapOfValue.getOrDefault("requestHeaders", "")).append("<br>");
+        templateData.append("Request Body     : ").append(mapOfValue.getOrDefault("requestBody", "")).append("<br>");
+        templateData.append("<br>");
+        templateData.append("Response Status  : ").append(mapOfValue.getOrDefault("responseStatus", "")).append("<br>");
+        templateData.append("Response Headers : ").append(mapOfValue.getOrDefault("responseHeaders", "")).append("<br>");
+        templateData.append("Response Body    : ").append(mapOfValue.getOrDefault("responseBody", ""));
 
         var requestBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("requestBody", ""));
         var responseBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("responseBody", ""));
 
-        return EXPAND_PLUS_CODE_BLOCK_HTTP_REQUEST_TEMPLATE.formatted
+        var newContentHtml = EXPAND_PLUS_CODE_BLOCK_HTTP_REQUEST_TEMPLATE.formatted
         (
             mapOfValue.get("requestUrl"),
-            httpRequestLogsTemplateData,
+            templateData,
             requestBody,
             responseBody
         );
+
+        listOf1HttpRequestLogs.clear();
+        contentHtml.append(newContentHtml);
+    }
+
+    private static final Map<String, List<Pattern>> MAP_OF_PATTERN_OF_WT_API_TRANSACTION_CYBERSOURCE_HTTP_REQUEST = new LinkedHashMap<>();
+
+    static
+    {
+        var addHttpRequestPattern = (BiConsumer<String, String>) (key, valuePattern) ->
+            MAP_OF_PATTERN_OF_WT_API_TRANSACTION_CYBERSOURCE_HTTP_REQUEST.computeIfAbsent(key, k -> new ArrayList<>()).add(Pattern.compile(valuePattern));
+
+        addHttpRequestPattern.accept("requestUrl",      "Cybersource URL :");
+        addHttpRequestPattern.accept("requestHeaders",  "Cybersource Request Header :");
+        addHttpRequestPattern.accept("requestBody",     "Cybersource Request Body : ");
+        addHttpRequestPattern.accept("responseBody",    "Cybersource Response :");
+        addHttpRequestPattern.accept("responseBody",    "Cybersource Failed Response :");
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    private static void insertContentHtmlForWtApiTransactionCybersourceHttpRequestLogs(StringBuilder contentHtml, List<StringBuilder> listOf1HttpRequestLogs)
+    {
+        if(listOf1HttpRequestLogs.isEmpty())
+        {
+            return;
+        }
+
+        var mapOfPatternOfHttpRequestTemp = new LinkedHashMap<>(MAP_OF_PATTERN_OF_WT_API_TRANSACTION_CYBERSOURCE_HTTP_REQUEST);
+        var mapOfValue = new HashMap<String, String>();
+
+        for(var log : listOf1HttpRequestLogs)
+        {
+            for(var entry : mapOfPatternOfHttpRequestTemp.entrySet())
+            {
+                var key = entry.getKey();
+                var listOfPattern = entry.getValue();
+
+                var found = false;
+
+                for(var pattern : listOfPattern)
+                {
+                    var splitResult = pattern.split(log, 2);
+
+                    if(splitResult.length == 2)
+                    {
+                        found = true;
+                        mapOfValue.put(key, splitResult[1]);
+                        break;
+                    }
+                }
+
+                if(found)
+                {
+                    mapOfPatternOfHttpRequestTemp.remove(key);
+                    break;
+                }
+            }
+        }
+
+        var templateData = new StringBuilder();
+        templateData.append("Request URL      : ").append(mapOfValue.getOrDefault("requestUrl", "")).append("<br>");
+        templateData.append("Request Headers  : ").append(mapOfValue.getOrDefault("requestHeaders", "")).append("<br>");
+        templateData.append("Request Body     : ").append(mapOfValue.getOrDefault("requestBody", "")).append("<br>");
+        templateData.append("<br>");
+        templateData.append("Response Body    : ").append(mapOfValue.getOrDefault("responseBody", ""));
+
+        var requestBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("requestBody", ""));
+        var responseBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("responseBody", ""));
+
+        var newContentHtml = EXPAND_PLUS_CODE_BLOCK_HTTP_REQUEST_TEMPLATE.formatted
+        (
+            "Call " + mapOfValue.get("requestUrl"),
+            templateData,
+            requestBody,
+            responseBody
+        );
+
+        listOf1HttpRequestLogs.clear();
+        contentHtml.append(newContentHtml);
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    private static void insertContentHtmlForWtApiTransactionIso8583RequestLogs(StringBuilder contentHtml, List<StringBuilder> listOfLogs)
+    {
+        if(listOfLogs.isEmpty())
+        {
+            return;
+        }
+
+        var expandTitle = new StringBuilder("Request ISO-8583");
+        var templateData = new StringBuilder();
+        var firstData = true;
+
+        for(var log : listOfLogs)
+        {
+            if(log.toString().contains("Payment URL: "))
+            {
+                var paymentUrl = log.toString().split("Payment URL: ")[1];
+                expandTitle.append(" - ").append(paymentUrl);
+            }
+
+            if(firstData)
+            {
+                firstData = false;
+                templateData.append(log);
+            }
+            else
+            {
+                templateData.append("<br>").append(log);
+            }
+        }
+
+        var newContentHtml = EXPAND_PLUS_CODE_BLOCK_ISO_8583_REQUEST_TEMPLATE.formatted
+        (
+            expandTitle.toString(),
+            templateData
+        );
+
+        listOfLogs.clear();
+        contentHtml.append(newContentHtml);
     }
 }
