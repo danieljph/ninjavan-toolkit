@@ -371,7 +371,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         }
         else if((modifiers & NativeKeyEvent.META_MASK) != 0 && (modifiers & NativeKeyEvent.SHIFT_MASK) != 0 && (keyChar == 'u' || keyChar == 'U'))
         {
-            confluenceToCodeBlockPlaintextSmClicked();
+            confluenceParseServerLogsSmClicked();
         }
     }
 

@@ -4,8 +4,10 @@ import com.karyasarma.toolkit.doku.model.ClipboardData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,10 +148,12 @@ public class ConfluenceUtils
     private static final Pattern DD_CORE_SYSTEM_LOG_API_HTTP_LOGS_PATTERN = Pattern.compile(".*CommonAppRequestFilter\\s+:\\sHTTP Logs:.*", Pattern.DOTALL);
     private static final Pattern DD_CORE_SYSTEM_LOG_API_HTTP_LOGS_REQ_AND_RESP_PATTERN = Pattern.compile(".*Req\\sBody\\s+=\\s(.*)Resp\\sBody\\s+=\\s(.*)Execute-In\\s+=.*", Pattern.DOTALL);
 
-    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN = Pattern.compile(".*Sending\\sKafka\\sto\\stopic\\s:\\s(.*),\\smessage\\s:\\s.*");
-    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_SPLIT_PATTERN = Pattern.compile("Sending\\sKafka\\sto\\stopic\\s:\\s(.*),\\smessage\\s:\\s");
+    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN = Pattern.compile(".*\\[(.*)]\\sKafka\\sevent\\shas been sent\\..*", Pattern.DOTALL);
 
-    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_PATTERN = Pattern.compile(".*\\[(.*)]\\sKafka\\sevent\\shas been sent\\..*", Pattern.DOTALL);
+    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_PATTERN = Pattern.compile(".*Sending\\sKafka\\sto\\stopic\\s:\\s(.*),\\smessage\\s:\\s.*");
+    private static final Pattern DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_SPLIT_PATTERN = Pattern.compile("Sending\\sKafka\\sto\\stopic\\s:\\s(.*),\\smessage\\s:\\s");
+
+    private static final Pattern WT_API_TRANSACTION_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN = Pattern.compile(".*Producing\\smessage\\s([a-zA-Z-]*)\\s(?:with\\sheaders:\\s)?(.*)\\s->\\s(.*).*");
 
     private ConfluenceUtils()
     {
@@ -288,15 +292,6 @@ public class ConfluenceUtils
             }
             else if((matcher = DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN.matcher(log)).matches())
             {
-                var kafkaTopic = matcher.group(1);
-                var kafkaPayload = DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_SPLIT_PATTERN.split(log, 2)[1];
-                var kafkaPayloadPrettify = JsonUtils.prettifyIgnoreException(kafkaPayload);
-
-                var contentHtmlTemp = EXPAND_PLUS_CODE_BLOCK_PUBLISH_KAFKA_TEMPLATE.formatted("Publish " + kafkaTopic, kafkaPayloadPrettify);
-                contentHtml.append(contentHtmlTemp);
-            }
-            else if((matcher = DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_PATTERN.matcher(log)).matches())
-            {
                 var logSplit = log.toString().split("\n");
 
                 var kafkaTopic = matcher.group(1);
@@ -314,6 +309,30 @@ public class ConfluenceUtils
                     
                     %s
                     """.formatted(partition, offset, key, headers, kafkaPayloadPrettify);
+
+                var contentHtmlTemp = EXPAND_PLUS_CODE_BLOCK_PUBLISH_KAFKA_TEMPLATE.formatted("Publish " + kafkaTopic, kafkaPayloadPrettifyWithAdditionalInfo);
+                contentHtml.append(contentHtmlTemp);
+            }
+            else if((matcher = DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_PATTERN.matcher(log)).matches())
+            {
+                var kafkaTopic = matcher.group(1);
+                var kafkaPayload = DD_CORE_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_2_SPLIT_PATTERN.split(log, 2)[1];
+                var kafkaPayloadPrettify = JsonUtils.prettifyIgnoreException(kafkaPayload);
+
+                var contentHtmlTemp = EXPAND_PLUS_CODE_BLOCK_PUBLISH_KAFKA_TEMPLATE.formatted("Publish " + kafkaTopic, kafkaPayloadPrettify);
+                contentHtml.append(contentHtmlTemp);
+            }
+            else if((matcher = WT_API_TRANSACTION_SYSTEM_LOG_PUBLISH_KAFKA_VARIANT_1_PATTERN.matcher(log)).matches())
+            {
+                var kafkaTopic = matcher.group(1);
+                var headerInfo = matcher.group(2);
+                var kafkaPayload = matcher.group(3);
+                var kafkaPayloadPrettify = JsonUtils.prettifyIgnoreException(kafkaPayload);
+                var kafkaPayloadPrettifyWithAdditionalInfo = """
+                    // Header Info: %s
+                    
+                    %s
+                    """.formatted(headerInfo, kafkaPayloadPrettify);
 
                 var contentHtmlTemp = EXPAND_PLUS_CODE_BLOCK_PUBLISH_KAFKA_TEMPLATE.formatted("Publish " + kafkaTopic, kafkaPayloadPrettifyWithAdditionalInfo);
                 contentHtml.append(contentHtmlTemp);
@@ -338,55 +357,73 @@ public class ConfluenceUtils
         return new ClipboardData(logs, contentHtml.toString());
     }
 
-    private static final Map<Pattern, String> MAP_OF_PATTERN_OF_HTTP_REQUEST = new HashMap<>();
+    private static final Map<String, List<Pattern>> MAP_OF_PATTERN_OF_HTTP_REQUEST = new LinkedHashMap<>();
 
     static
     {
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sRequest URL\\s+:\\s"), "requestUrl");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sRequest Header\\s+:\\s"), "requestHeaders");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sRequest body\\s+:\\s"), "requestBody");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sResponse status\\s+:\\s"), "responseStatus");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sResponse header\\s+:\\s"), "responseHeaders");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("LoggingClientInterceptor\\s+:\\sResponse body\\s+:\\s"), "responseBody");
+        var addHttpRequestPattern = (BiConsumer<String, String>) (key, valuePattern) ->
+            MAP_OF_PATTERN_OF_HTTP_REQUEST.computeIfAbsent(key, k -> new ArrayList<>()).add(Pattern.compile(valuePattern));
 
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sRequest\\s+:\\s"), "requestUrl");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sRequest\\sHeader\\s+:\\s"), "requestHeaders");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sRequest\\sBody\\s+:\\s"), "requestBody");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sResponse\\sStatus\\s+:\\s"), "responseStatus");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sResponse\\sHeader\\s+:\\s"), "responseHeaders");
-        MAP_OF_PATTERN_OF_HTTP_REQUEST.put(Pattern.compile("RestTemplateLoggingInterceptor\\s+:\\sResponse\\sBody\\s+:\\s"), "responseBody");
+        addHttpRequestPattern.accept("requestUrl",      "LoggingClientInterceptor\\s+:\\sRequest\\sURL\\s+:\\s");
+        addHttpRequestPattern.accept("requestHeaders",  "LoggingClientInterceptor\\s+:\\sRequest\\sHeader\\s+:\\s");
+        addHttpRequestPattern.accept("requestBody",     "LoggingClientInterceptor\\s+:\\sRequest\\sbody\\s+:\\s");
+        addHttpRequestPattern.accept("responseStatus",  "LoggingClientInterceptor\\s+:\\sResponse\\sstatus\\s+:\\s");
+        addHttpRequestPattern.accept("responseHeaders", "LoggingClientInterceptor\\s+:\\sResponse\\sheader\\s+:\\s");
+        addHttpRequestPattern.accept("responseBody",    "LoggingClientInterceptor\\s+:\\sResponse\\sbody\\s+:\\s");
+
+        addHttpRequestPattern.accept("requestUrl",      "Request\\s+:\\s");
+        addHttpRequestPattern.accept("requestHeaders",  "Request\\sHeader\\s+:\\s");
+        addHttpRequestPattern.accept("requestBody",     "Request\\sBody\\s+:\\s");
+        addHttpRequestPattern.accept("responseStatus",  "Response\\sStatus\\s+:\\s");
+        addHttpRequestPattern.accept("responseHeaders", "Response\\sHeader\\s+:\\s");
+        addHttpRequestPattern.accept("responseBody",    "Response\\sBody\\s+:\\s");
     }
 
     private static String generateContentHtmlForHttpRequestLogs(List<StringBuilder> listOf1HttpRequestLogs)
     {
+        var mapOfPatternOfHttpRequestTemp = new LinkedHashMap<>(MAP_OF_PATTERN_OF_HTTP_REQUEST);
         var mapOfValue = new HashMap<String, String>();
 
         for(var log : listOf1HttpRequestLogs)
         {
-            for(var entry : MAP_OF_PATTERN_OF_HTTP_REQUEST.entrySet())
+            for(var entry : mapOfPatternOfHttpRequestTemp.entrySet())
             {
-                var pattern = entry.getKey();
-                var valueAsKey = entry.getValue();
-                var splitResult = pattern.split(log, 2);
+                var key = entry.getKey();
+                var listOfPattern = entry.getValue();
 
-                if(splitResult.length == 2)
+                var found = false;
+
+                for(var pattern : listOfPattern)
                 {
-                    mapOfValue.put(valueAsKey, splitResult[1]);
+                    var splitResult = pattern.split(log, 2);
+
+                    if(splitResult.length == 2)
+                    {
+                        found = true;
+                        mapOfValue.put(key, splitResult[1]);
+                        break;
+                    }
+                }
+
+                if(found)
+                {
+                    mapOfPatternOfHttpRequestTemp.remove(key);
+                    break;
                 }
             }
         }
 
         var httpRequestLogsTemplateData = new StringBuilder();
-        httpRequestLogsTemplateData.append("Request URL      : ").append(mapOfValue.get("requestUrl")).append("<br>");
-        httpRequestLogsTemplateData.append("Request Headers  : ").append(mapOfValue.get("requestHeaders")).append("<br>");
-        httpRequestLogsTemplateData.append("Request Body     : ").append(mapOfValue.get("requestBody")).append("<br>");
+        httpRequestLogsTemplateData.append("Request URL      : ").append(mapOfValue.getOrDefault("requestUrl", "")).append("<br>");
+        httpRequestLogsTemplateData.append("Request Headers  : ").append(mapOfValue.getOrDefault("requestHeaders", "")).append("<br>");
+        httpRequestLogsTemplateData.append("Request Body     : ").append(mapOfValue.getOrDefault("requestBody", "")).append("<br>");
         httpRequestLogsTemplateData.append("<br>");
-        httpRequestLogsTemplateData.append("Response Status  : ").append(mapOfValue.get("responseStatus")).append("<br>");
-        httpRequestLogsTemplateData.append("Response Headers : ").append(mapOfValue.get("responseHeaders")).append("<br>");
-        httpRequestLogsTemplateData.append("Response Body    : ").append(mapOfValue.get("responseBody"));
+        httpRequestLogsTemplateData.append("Response Status  : ").append(mapOfValue.getOrDefault("responseStatus", "")).append("<br>");
+        httpRequestLogsTemplateData.append("Response Headers : ").append(mapOfValue.getOrDefault("responseHeaders", "")).append("<br>");
+        httpRequestLogsTemplateData.append("Response Body    : ").append(mapOfValue.getOrDefault("responseBody", ""));
 
-        var requestBody = JsonUtils.prettifyIgnoreException(mapOfValue.get("requestBody"));
-        var responseBody = JsonUtils.prettifyIgnoreException(mapOfValue.get("responseBody"));
+        var requestBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("requestBody", ""));
+        var responseBody = JsonUtils.prettifyIgnoreException(mapOfValue.getOrDefault("responseBody", ""));
 
         return EXPAND_PLUS_CODE_BLOCK_HTTP_REQUEST_TEMPLATE.formatted
         (
