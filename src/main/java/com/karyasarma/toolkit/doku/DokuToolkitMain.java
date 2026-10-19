@@ -21,6 +21,7 @@ import com.karyasarma.toolkit.doku.util.JwtUtils;
 import com.karyasarma.toolkit.doku.util.LiquibaseYamlUtils;
 import com.karyasarma.toolkit.doku.util.Mp3Utils;
 import com.karyasarma.toolkit.doku.util.ProxyAuMockServerUtils;
+import com.karyasarma.toolkit.doku.util.SpringCloudConfigUtils;
 import com.karyasarma.toolkit.util.XmlUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +102,8 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
     private final SimpleMenu compactXmlSm = new SimpleMenu("Compact XML", new MenuShortcut(KeyEvent.VK_X, true));
 
     private final SimpleMenu getFileContentSm = new SimpleMenu("Get File Content", new MenuShortcut(KeyEvent.VK_F));
-    private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically", new MenuShortcut(KeyEvent.VK_S));
+    private final SimpleMenu sortAlphabeticallySm = new SimpleMenu("Sort Alphabetically", new MenuShortcut(KeyEvent.VK_T));
+    private final SimpleMenu sortAlphabeticallyAndRemoveDuplicatesSm = new SimpleMenu("Sort Alphabetically - Remove Duplicates", new MenuShortcut(KeyEvent.VK_S));
     private final SimpleMenu generateLiquibaseYamlIdSm = new SimpleMenu("Generate Liquibase YAML ID", new MenuShortcut(KeyEvent.VK_Y));
 
     private final SimpleMenu aesEncryptSm = new SimpleMenu("AES Encrypt (SIT / UAT)", new MenuShortcut(KeyEvent.VK_A));
@@ -138,6 +140,13 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
     private final SimpleMenu toOldCurlSm = new SimpleMenu("To Old cURL");
 
     private final SimpleMenu cheatNoBugsSm = new SimpleMenu("Cheat No Bugs");
+
+    private final SimpleMenu springCloudConfigParentSm = new SimpleMenu("Spring Cloud Config");
+
+    private final SimpleMenu pathsToPredicatesPathSingleLineSm = new SimpleMenu("Paths to Predicates Path Single-Line");
+    private final SimpleMenu pathsToPredicatesPathMultiLineSm = new SimpleMenu("Paths to Predicates Path Multi-Line");
+    private final SimpleMenu fromPredicatesPathSingleLineToMultiLineSm = new SimpleMenu("From Predicates Path Single-Line to Multi-Line");
+    private final SimpleMenu fromPredicatesPathMultiLineToSingleLineSm = new SimpleMenu("From Predicates Path Multi-Line to Single-Line");
 
     private MenuItem quitMi;
 
@@ -211,6 +220,7 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
 
         listOfSimpleMenu.add(getFileContentSm);
         listOfSimpleMenu.add(sortAlphabeticallySm);
+        listOfSimpleMenu.add(sortAlphabeticallyAndRemoveDuplicatesSm);
         listOfSimpleMenu.add(generateLiquibaseYamlIdSm);
 
         listOfSimpleMenu.add(separatorSm);
@@ -225,8 +235,6 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         listOfSimpleMenu.add(passwordLdapSm);
 
         listOfSimpleMenu.add(0, miscParentSm);
-
-        listOfSimpleMenu.add(1, separatorSm);
 
         miscParentSm.addChild(convertUrlToProxyAuMockServerSm);
 
@@ -265,6 +273,15 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         miscParentSm.addChild(separatorSm);
 
         miscParentSm.addChild(cheatNoBugsSm);
+
+        listOfSimpleMenu.add(1, springCloudConfigParentSm);
+        springCloudConfigParentSm.addChild(pathsToPredicatesPathSingleLineSm);
+        springCloudConfigParentSm.addChild(pathsToPredicatesPathMultiLineSm);
+        springCloudConfigParentSm.addChild(separatorSm);
+        springCloudConfigParentSm.addChild(fromPredicatesPathSingleLineToMultiLineSm);
+        springCloudConfigParentSm.addChild(fromPredicatesPathMultiLineToSingleLineSm);
+
+        listOfSimpleMenu.add(2, separatorSm);
 
         for(SimpleMenu simpleMenu : listOfSimpleMenu)
         {
@@ -445,6 +462,10 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         {
             sortAlphabeticallySmClicked();
         }
+        else if(sortAlphabeticallyAndRemoveDuplicatesSm.getName().equals(actionCommand))
+        {
+            sortAlphabeticallyAndRemoveDuplicatesSmClicked();
+        }
         else if(generateLiquibaseYamlIdSm.getName().equals(actionCommand))
         {
             generateLiquibaseYamlIdSmClicked();
@@ -544,6 +565,22 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         else if(cheatNoBugsSm.getName().equals(actionCommand))
         {
             cheatNoBugsSmClicked();
+        }
+        else if(pathsToPredicatesPathSingleLineSm.getName().equals(actionCommand))
+        {
+            pathsToPredicatesPathSingleLineSmClicked();
+        }
+        else if(pathsToPredicatesPathMultiLineSm.getName().equals(actionCommand))
+        {
+            pathsToPredicatesPathMultiLineSmClicked();
+        }
+        else if(fromPredicatesPathSingleLineToMultiLineSm.getName().equals(actionCommand))
+        {
+            fromPredicatesPathSingleLineToMultiLineSmClicked();
+        }
+        else if(fromPredicatesPathMultiLineToSingleLineSm.getName().equals(actionCommand))
+        {
+            fromPredicatesPathMultiLineToSingleLineSmClicked();
         }
         else
         {
@@ -699,9 +736,26 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
         executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
         {
             String unsorted = ClipboardUtils.getDataFromStringFlavor();
-            String sorted = Arrays.stream(unsorted.split("\n")).map(String::trim).sorted().collect(Collectors.joining("\n"));
+            String sorted = Arrays.stream(unsorted.split("\n"))
+                .map(String::trim)
+                .sorted()
+                .collect(Collectors.joining("\n"));
             ClipboardUtils.copyToClipboard(sorted);
         }, "sortAlphabeticallySmClicked");
+    }
+
+    private void sortAlphabeticallyAndRemoveDuplicatesSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String unsorted = ClipboardUtils.getDataFromStringFlavor();
+            String sorted = Arrays.stream(unsorted.split("\n"))
+                .map(String::trim)
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining("\n"));
+            ClipboardUtils.copyToClipboard(sorted);
+        }, "sortAlphabeticallyAndRemoveDuplicatesSmClicked");
     }
 
     private void generateLiquibaseYamlIdSmClicked()
@@ -954,6 +1008,42 @@ public class DokuToolkitMain implements ActionListener, NativeKeyListener
             () -> ClipboardUtils.copyToClipboard(CheatNoBugsUtils.getCheatNoBugs()),
             "cheatNoBugsSmClicked"
         );
+    }
+
+    private void pathsToPredicatesPathSingleLineSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(SpringCloudConfigUtils.pathsToPredicatesPathSingleLine(data));
+        }, "pathsToPredicatesPathSingleLineSmClicked");
+    }
+
+    private void pathsToPredicatesPathMultiLineSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(SpringCloudConfigUtils.pathsToPredicatesPathMultiLine(data));
+        }, "pathsToPredicatesPathMultiLineSmClicked");
+    }
+
+    private void fromPredicatesPathSingleLineToMultiLineSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(SpringCloudConfigUtils.fromPredicatesPathSingleLineToMultiLine(data));
+        }, "fromPredicatesPathSingleLineToMultiLineSmClicked");
+    }
+
+    private void fromPredicatesPathMultiLineToSingleLineSmClicked()
+    {
+        executeWithExceptionHandlingAndAllowOnly1MethodCallAtTheSameTime(() ->
+        {
+            String data = ClipboardUtils.getDataFromStringFlavor();
+            ClipboardUtils.copyToClipboard(SpringCloudConfigUtils.fromPredicatesPathMultiLineToSingleLine(data));
+        }, "fromPredicatesPathMultiLineToSingleLineSmClicked");
     }
 
     private void clipboardHistoryMenuClicked()
